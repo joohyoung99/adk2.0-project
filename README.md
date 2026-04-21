@@ -32,7 +32,7 @@ ADK 2.0 기반의 **냉장고 재료 기반 레시피 추천 워크플로우 시
 
 ## 🏗️ 아키텍처
 
-### 1) Root Workflow — 안정 버전
+### 1) Root Workflow 
 
 ```text
 START
