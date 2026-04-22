@@ -1,8 +1,8 @@
-# Fridge2Dish Agent
+# 냉털쉐프    Agent
 
 ADK 2.0 기반의 **냉장고 재료 기반 레시피 추천 워크플로우 시스템**입니다.
 
-사용자 자연어 입력, PostgreSQL에 저장된 냉장고 재고/선호 정보, 레시피 데이터를 결합해 **레시피 추천**, **조건부 분기**, **대체재 기반 재시도**를 수행합니다.
+사용자 자연어 입력, PostgreSQL에 저장된 냉장고 재고/선호 정보를 결합해 **레시피 추천**, **조건부 분기**, **대체재 기반 재시도**를 수행합니다. DB에 없는 레시피는 branch agent가 **Google Search**로 실시간 탐색해 생성합니다.
 
 이 프로젝트는 ADK 2.0 예시의 세 가지 패턴을 함께 반영합니다.
 
@@ -16,15 +16,15 @@ ADK 2.0 기반의 **냉장고 재료 기반 레시피 추천 워크플로우 시
 
 이 시스템은 단순한 레시피 추천 챗봇이 아닙니다.
 
-입력 문장을 구조화한 뒤, 사용자 재고와 선호 정보를 조회하고, 후보 레시피를 탐색한 다음, 현재 재료 상태에 따라 **즉시 조리 가능 / 대체재 필요 / 장보기 필요**로 분기합니다. 부족한 재료가 있는 경우에는 동적 루프를 통해 대체재를 탐색하고 재평가합니다.
+입력 문장을 구조화한 뒤, 사용자 재고와 선호 정보를 조회하고, DB 기반으로 후보 레시피를 1차 탐색합니다. 현재 재료 상태에 따라 **즉시 조리 가능 / 대체재 필요 / 장보기 필요**로 분기하며, 각 branch agent는 DB 결과를 우선 활용하되 **부족하거나 없는 경우 Google Search로 실시간 레시피를 탐색해 생성**합니다. 부족한 재료가 있는 경우에는 동적 루프를 통해 대체재를 탐색하고 재평가합니다.
 
 핵심 목표는 아래와 같습니다.
 
 * 자연어 입력에서 재료와 제약조건을 구조화한다.
 * 사용자 냉장고 재고 및 선호를 DB에서 조회한다.
-* 조건에 맞는 레시피 후보를 찾는다.
-* 레시피별 부족 재료와 매칭 점수를 계산한다.
+* DB 기반 후보 레시피를 1차 탐색하고 매칭 점수를 계산한다.
 * 상태에 따라 조건부 라우팅을 수행한다.
+* branch agent가 DB 결과 또는 Google Search로 최종 레시피를 생성한다.
 * 대체재 기반 재시도 루프를 수행한다.
 * 최종 추천 결과와 로그를 저장한다.
 
@@ -32,7 +32,7 @@ ADK 2.0 기반의 **냉장고 재료 기반 레시피 추천 워크플로우 시
 
 ## 🏗️ 아키텍처
 
-### 1) Root Workflow 
+### 1) Root Workflow
 
 ```text
 START
@@ -47,15 +47,15 @@ START
   ▼
 [load_user_context]         ◀── Function Node: PostgreSQL 에서 재고/선호/유통기한 조회
   ▼
-[search_candidate_recipes]  ◀── Function Node: 조건 기반 후보 레시피 탐색
+[search_candidate_recipes]  ◀── Function Node: DB 기반 후보 레시피 1차 탐색
   ▼
 [evaluate_recipe_fit]       ◀── Function Node: 매칭 점수 계산 + route 결정
   ▼
-[fit_router]                ◀── Function Node: Event(route=...) 생성
+[fit_router]                ◀── Function Node: ctx.route = "..." 세팅
   │
-  ├── route="COOK_NOW"        ──▶ [cook_now_agent]        ◀── LLM Node
-  ├── route="SUBSTITUTION"    ──▶ [substitution_agent]    ◀── LLM Node
-  └── route="SHOPPING_NEEDED" ──▶ [shopping_agent]        ◀── LLM Node
+  ├── route="COOK_NOW"        ──▶ [cook_now_agent]        ◀── LLM Node + google_search
+  ├── route="SUBSTITUTION"    ──▶ [substitution_agent]    ◀── LLM Node + google_search
+  └── route="SHOPPING_NEEDED" ──▶ [shopping_agent]        ◀── LLM Node + google_search
   │
   ▼
 [save_recommendation_log]   ◀── Function Node: 결과 저장
@@ -104,24 +104,25 @@ class RecipeRecoveryWorkflow(BaseNode):
    PostgreSQL에서 사용자 냉장고 재고, 선호 정보, 알레르기, 유통기한 임박 재료를 조회합니다.
 
 6. **Search Candidates (Function)**
-   조리 시간, 도구, 선호 태그를 반영해 후보 레시피를 탐색합니다.
+   조리 시간, 도구, 선호 태그를 반영해 DB에서 후보 레시피를 1차 탐색합니다.
 
 7. **Evaluate Fit (Function)**
    레시피별 부족 재료, 필수 재료, 매칭 점수, 추천 가능 상태를 계산합니다.
 
 8. **Router (Function)**
-   평가 결과를 바탕으로 `Event(route=...)`를 생성합니다.
+   평가 결과를 바탕으로 `ctx.route`에 값을 세팅합니다.
 
    * `COOK_NOW`: 보유 재료만으로 즉시 조리 가능
    * `SUBSTITUTION`: 부족 재료가 있지만 대체재로 해결 가능
    * `SHOPPING_NEEDED`: 현재 상태로는 장보기가 필요
 
-9. **Branch Agent (LLM)**
-   선택된 branch agent가 상태에 맞는 응답을 생성합니다.
+9. **Branch Agent (LLM + google_search)**
+   선택된 branch agent가 state의 구조화된 데이터를 바탕으로 최종 레시피를 생성합니다.
+   **DB 결과가 충분하면 그대로 활용하고, 부족하거나 없으면 `google_search` tool을 호출해 실시간으로 레시피를 탐색·생성**합니다.
 
-   * `cook_now_agent`: 바로 만들 수 있는 메뉴 추천
-   * `substitution_agent`: 대체재 기반 조리 안내
-   * `shopping_agent`: 최소 장보기 항목 포함 추천
+   * `cook_now_agent`: 보유 재료로 바로 만들 수 있는 레시피 생성
+   * `substitution_agent`: DB 대체재 정보 + 검색 기반 대체 조리법 생성
+   * `shopping_agent`: 최소 장보기 목록 + 완성 레시피 생성
 
 10. **Save Log (Function)**
     요청 원문, 컨텍스트, 추천 결과를 저장합니다.
@@ -152,7 +153,7 @@ class RecipeRecoveryWorkflow(BaseNode):
 
 ### Conditional Routing
 
-`fit_router`가 `Event(route=...)`를 반환하고, route 라벨에 따라 분기 agent가 달라집니다.
+`fit_router`가 `ctx.route`에 값을 세팅하면, `Edge(from_node, to_node, route=...)` 조건에 따라 분기 agent가 달라집니다.
 
 분기 기준 예시:
 
@@ -172,7 +173,7 @@ class RecipeRecoveryWorkflow(BaseNode):
 | ---------------------------- | --------------------------------------------------------------------------- |
 | `agents/root_workflow.py`    | root workflow 정의 및 직렬 + 조건부 분기 조립                                           |
 | `agents/extractor_agent.py`  | 자연어 입력 구조화 LLM 노드                                                           |
-| `agents/branch_agents.py`    | COOK_NOW / SUBSTITUTION / SHOPPING_NEEDED 분기 LLM 노드                         |
+| `agents/branch_agents.py`    | COOK_NOW / SUBSTITUTION / SHOPPING_NEEDED 분기 LLM 노드 (google_search tool 포함) |
 | `agents/dynamic_recovery.py` | BaseNode 기반 동적 재추천 루프 템플릿                                                   |
 | `schemas/agent_io.py`        | `FridgeRequest`, `RecipeFitResult`, `RecommendationResponse` 등 Pydantic 스키마 |
 | `db/models/`                 | SQLAlchemy ORM 모델                                                           |
@@ -217,7 +218,7 @@ class RecipeRecoveryWorkflow(BaseNode):
 
 ### 5. `search_candidate_recipes` — Function Node
 
-사용자 조건과 DB 정보를 결합해 후보 레시피를 탐색합니다.
+사용자 조건과 DB 정보를 결합해 후보 레시피를 탐색합니다. 결과가 없어도 워크플로우는 계속 진행되며, branch agent가 Google Search로 보완합니다.
 
 ### 6. `evaluate_recipe_fit` — Function Node
 
@@ -228,15 +229,19 @@ class RecipeRecoveryWorkflow(BaseNode):
 * 매칭 점수
 * 추천 route (`COOK_NOW`, `SUBSTITUTION`, `SHOPPING_NEEDED`)
 
+DB 후보가 없는 경우 보유 재료 수와 다양성을 기준으로 route를 결정합니다.
+
 ### 7. `fit_router` — Function Node
 
-`Event(route=...)`를 반환해 분기 엣지를 활성화합니다.
+`ctx.route`에 값을 세팅해 `Edge`의 `route` 조건을 활성화합니다.
 
-### 8. Branch Agents — LLM Nodes
+### 8. Branch Agents — LLM Nodes (+ google_search)
 
-* `cook_now_agent`
-* `substitution_agent`
-* `shopping_agent`
+각 agent는 state의 구조화된 데이터(재고, 선호, 매칭 결과, 대체재)를 프롬프트에 주입받아 최종 레시피를 생성합니다. DB 결과가 충분하면 우선 활용하고, 부족하면 `google_search`를 자율적으로 호출합니다.
+
+* `cook_now_agent`: 보유 재료만으로 만들 수 있는 레시피 생성
+* `substitution_agent`: 대체재 정보 포함 조리법 생성
+* `shopping_agent`: 최소 장보기 목록 + 완성 레시피 생성
 
 ### 9. `save_recommendation_log` — Function Node
 
@@ -281,7 +286,7 @@ class RecipeRecoveryWorkflow(BaseNode):
 
 ### `recipes`
 
-레시피 마스터
+레시피 마스터 (DB 캐시 역할 — branch agent가 생성한 레시피도 저장 가능)
 
 * 제목
 * 설명
@@ -302,7 +307,7 @@ class RecipeRecoveryWorkflow(BaseNode):
 
 ### `ingredient_substitutions`
 
-대체 재료 매핑
+대체 재료 매핑 — branch agent 프롬프트에 주입되어 LLM의 대체재 판단을 보조
 
 * 원재료
 * 대체 재료
@@ -311,7 +316,7 @@ class RecipeRecoveryWorkflow(BaseNode):
 
 ### `recommendation_logs`
 
-추천 요청/결과 저장
+추천 요청/결과 저장 (Google Search로 생성한 레시피 포함)
 
 ### `cooking_history`
 
@@ -402,6 +407,10 @@ class RecipeRecoveryWorkflow(BaseNode):
 * `apply_substitutions(candidate: dict, substitutions: dict) -> dict`
 * `rank_recipe_candidates(candidates: list[dict], expiring_items: list[dict], preferences: dict) -> list[dict]`
 
+### Branch Agent 내장 Tool
+
+* `google_search` — ADK 내장 tool. DB 후보 부족 시 branch agent가 자율 호출해 실시간 레시피 탐색
+
 ### 저장 및 이력
 
 * `save_recommendation_log(user_id: int, request_text: str, context_json: dict, result_json: dict) -> int`
@@ -434,7 +443,7 @@ app/
  │   └─ response.py
  ├─ agents/
  │   ├─ extractor_agent.py
- │   ├─ branch_agents.py
+ │   ├─ branch_agents.py       ← google_search tool 포함
  │   ├─ dynamic_recovery.py
  │   ├─ root_workflow.py
  │   └─ prompts/
@@ -464,9 +473,9 @@ uv run python -m app.main
 
 예상 분기 예시:
 
-* 재료 충분 → `COOK_NOW`
-* 대체재 가능 → `SUBSTITUTION`
-* 장보기 필요 → `SHOPPING_NEEDED`
+* DB 레시피 매칭 → `COOK_NOW` → cook_now_agent가 레시피 생성
+* 재료 일부 부족 → `SUBSTITUTION` → substitution_agent가 대체재 + 검색으로 레시피 생성
+* 재료 많이 부족 → `SHOPPING_NEEDED` → shopping_agent가 장보기 목록 + 검색으로 레시피 생성
 
 ---
 
@@ -479,7 +488,7 @@ uv run python -m app.main
 * **자동 파라미터 바인딩**: Function Node가 state 키를 인자로 주입받아 실행
 * **Pydantic 기반 타입 검증**: 입력/평가/응답을 구조화
 * **PostgreSQL + SQLAlchemy 연동**: 재고, 선호, 추천 로그를 상태로 관리
-* **규칙 기반 계산 + LLM 설명 생성 분리**
+* **DB 우선 + Google Search 보완**: DB 레시피를 캐시로 활용하고, 없으면 branch agent가 실시간 탐색·생성
 
 ---
 
@@ -491,9 +500,10 @@ uv run python -m app.main
 * 식단 추천 워크플로우 확장
 * 이미지 기반 냉장고 재료 인식 연계
 * 동적 워크플로우를 루트 실행 엔진으로 승격
+* Google Search로 생성한 레시피를 DB에 자동 저장해 캐시 누적
 
 ---
 
 ## 📝 발표용 한 줄 소개
 
-**Fridge2Dish Agent는 ADK 2.0의 Graph-based Workflow, Conditional Routing, Dynamic Workflow 패턴을 결합해 자연어 입력 구조화, 사용자 재고 조회, 레시피 후보 탐색, 상태별 분기, 대체재 기반 재추천까지 수행하는 냉장고 재료 기반 레시피 추천 시스템이다.**
+**Fridge2Dish Agent는 ADK 2.0의 Graph-based Workflow, Conditional Routing, Dynamic Workflow 패턴을 결합해 자연어 입력 구조화, 사용자 재고 조회, DB 기반 레시피 매칭, 상태별 분기, Google Search를 활용한 실시간 레시피 생성, 대체재 기반 재추천까지 수행하는 냉장고 재료 기반 레시피 추천 시스템이다.**
