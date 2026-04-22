@@ -30,10 +30,27 @@ def unpack_request(ctx: Context) -> dict:
 
 
 def parse_input(ctx: Context) -> dict:
-    """입력 검증 + 정규화"""
-    req = ctx.state.get("fridge_request", {})
-    if not isinstance(req, dict):
-        raise ValueError("fridge_request must be a dict")
-    
+    """입력 검증 + 정규화 (도구명 소문자 통일, 빈 리스트 기본값 보정)"""
+    tool_aliases = {
+        "프라이팬": "pan", "팬": "pan",
+        "냄비": "pot", "오븐": "oven",
+        "전자레인지": "microwave", "에어프라이어": "airfryer",
+        "그릴": "grill",
+    }
 
-    return 
+    allowed_tools = ctx.state.get("allowed_tools") or []
+    normalized_tools = [
+        tool_aliases.get(t, t.lower()) for t in allowed_tools
+    ]
+    ctx.state["allowed_tools"] = normalized_tools
+
+    if not ctx.state.get("ingredients"):
+        ctx.state["ingredients"] = []
+    if not ctx.state.get("excluded_ingredients"):
+        ctx.state["excluded_ingredients"] = []
+
+    return {
+        "allowed_tools": normalized_tools,
+        "ingredients": ctx.state.get("ingredients", []),
+        "excluded_ingredients": ctx.state.get("excluded_ingredients", []),
+    }

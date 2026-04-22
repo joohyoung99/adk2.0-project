@@ -35,4 +35,5 @@ async def merge_input_with_fridge(user_id: int, ingredients: list[str]) -> dict:
             session, user_id=user_id, input_ingredients=ingredients
         )
 
-    return {"merged_fridge_items": [i.model_dump() for i in merged]}
+    # fridge_items 를 덮어써서 이후 노드가 병합된 재료를 사용하게 함
+    return {"fridge_items": [i.model_dump() for i in merged]}
