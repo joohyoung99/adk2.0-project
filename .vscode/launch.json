@@ -1,0 +1,47 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "냉털쉐프 Agent (기본 샘플)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "app.main",
+      "python": "${workspaceFolder}/.venv/Scripts/python.exe",
+      "cwd": "${workspaceFolder}",
+      "envFile": "${workspaceFolder}/.env",
+      "console": "integratedTerminal",
+      "justMyCode": false
+    },
+    {
+      "name": "냉털쉐프 Agent (직접 입력)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "app.main",
+      "python": "${workspaceFolder}/.venv/Scripts/python.exe",
+      "cwd": "${workspaceFolder}",
+      "envFile": "${workspaceFolder}/.env",
+      "args": ["${input:userMessage}"],
+      "console": "integratedTerminal",
+      "justMyCode": false
+    },
+    {
+      "name": "Seed DB",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/scripts/seed.py",
+      "python": "${workspaceFolder}/.venv/Scripts/python.exe",
+      "cwd": "${workspaceFolder}",
+      "envFile": "${workspaceFolder}/.env",
+      "console": "integratedTerminal",
+      "justMyCode": false
+    }
+  ],
+  "inputs": [
+    {
+      "id": "userMessage",
+      "type": "promptString",
+      "description": "자연어 입력 메시지",
+      "default": "계란, 소고기, 열무 있고 20분 안에 프라이팬으로 만들 수 있는 점심 메뉴 추천해줘"
+    }
+  ]
+}

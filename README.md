@@ -167,21 +167,10 @@ class RecipeRecoveryWorkflow(BaseNode):
 
 ---
 
-## 📁 핵심 파일
-
-| 파일/디렉토리                      | 역할                                                                          |
-| ---------------------------- | --------------------------------------------------------------------------- |
-| `agents/root_workflow.py`    | root workflow 정의 및 직렬 + 조건부 분기 조립                                           |
-| `agents/extractor_agent.py`  | 자연어 입력 구조화 LLM 노드                                                           |
-| `agents/branch_agents.py`    | COOK_NOW / SUBSTITUTION / SHOPPING_NEEDED 분기 LLM 노드 (google_search tool 포함) |
-| `agents/dynamic_recovery.py` | BaseNode 기반 동적 재추천 루프 템플릿                                                   |
-| `schemas/agent_io.py`        | `FridgeRequest`, `RecipeFitResult`, `RecommendationResponse` 등 Pydantic 스키마 |
-| `db/models/`                 | SQLAlchemy ORM 모델                                                           |
-| `db/repositories/`           | PostgreSQL 조회/저장 로직                                                         |
-| `tools/`                     | Function Node 또는 tool wrapper                                               |
-| `services/`                  | 점수 계산, 대체재 추천, 후보 랭킹 로직                                                     |
-
----
+<h3>Workflow</h3>
+<p align="center">
+  <img src="./adk2.0_flowchart.png" alt="ADK2.0 Project Workflow" width="900"/>
+</p>
 
 ## 🧩 노드 구성
 

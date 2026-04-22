@@ -1,12 +1,16 @@
 """
 레시피 탐색 / 매칭 평가 / 대체재 조회 관련 FunctionNode 툴.
+ctx 는 ADK 가 자동 주입하며, 명시적 state 기록에 사용합니다.
 """
+from google.adk import Context
+
 from app.db.repositories import recipe_repository
 from app.db.session import AsyncSessionLocal
 from app.schemas.agent_io import FridgeItemSnapshot
 
 
 async def search_candidate_recipes(
+    ctx: Context,
     max_cooking_time: int | None = None,
     allowed_tools: list[str] | None = None,
     preferences: dict | None = None,
@@ -25,10 +29,14 @@ async def search_candidate_recipes(
             dietary_tags=dietary_tags or [],
         )
 
-    return {"candidates": [c.model_dump() for c in candidates]}
+    candidates_list = [c.model_dump() for c in candidates]
+    ctx.state["candidates"] = candidates_list
+
+    return {"candidates": candidates_list}
 
 
 async def evaluate_recipe_fit(
+    ctx: Context,
     candidates: list[dict],
     fridge_items: list[dict],
     preferences: dict | None = None,
@@ -42,7 +50,6 @@ async def evaluate_recipe_fit(
     - DB 후보가 없으면 보유 재료 수로 route 폴백 결정
     """
     allergies: set[str] = set((preferences or {}).get("allergies", []))
-    disliked: set[str] = set((preferences or {}).get("disliked_ingredients", []))
     fridge_snapshots = [FridgeItemSnapshot(**i) for i in fridge_items]
 
     fit_results = []
@@ -54,7 +61,6 @@ async def evaluate_recipe_fit(
                 fridge_items=fridge_snapshots,
                 recipe_id=c["recipe_id"],
             )
-            # 알레르기·비선호 재료 포함 레시피 제외
             recipe_ing_names = set(
                 result.missing_required + result.missing_optional
             )
@@ -66,11 +72,10 @@ async def evaluate_recipe_fit(
     if not fit_results:
         n = len(fridge_snapshots)
         route = "COOK_NOW" if n >= 5 else "SUBSTITUTION" if n >= 3 else "SHOPPING_NEEDED"
-        return {
-            "fit_results": [],
-            "best_route": route,
-            "best_recipe_id": None,
-        }
+        ctx.state["fit_results"] = []
+        ctx.state["best_route"] = route
+        ctx.state["best_recipe_id"] = None
+        return {"fit_results": [], "best_route": route, "best_recipe_id": None}
 
     # 점수 내림차순 정렬
     fit_results.sort(key=lambda r: r.match_score, reverse=True)
@@ -79,7 +84,6 @@ async def evaluate_recipe_fit(
     # 대체재 존재 여부로 SHOPPING → SUBSTITUTION 승격
     if best.route == "SHOPPING_NEEDED":
         async with AsyncSessionLocal() as session:
-            from app.db.repositories.recipe_repository import get_recipe_ingredients
             from app.db.models.ingredient import IngredientSubstitution
             from sqlalchemy import select
 
@@ -87,12 +91,8 @@ async def evaluate_recipe_fit(
             for missing in best.missing_required:
                 result_sub = await session.execute(
                     select(IngredientSubstitution)
-                    .join(
-                        IngredientSubstitution.original_ingredient
-                    )
-                    .where(
-                        IngredientSubstitution.original_ingredient.has(name=missing)
-                    )
+                    .join(IngredientSubstitution.original_ingredient)
+                    .where(IngredientSubstitution.original_ingredient.has(name=missing))
                 )
                 if result_sub.scalars().first():
                     has_sub = True
@@ -101,19 +101,26 @@ async def evaluate_recipe_fit(
             if has_sub:
                 best = best.model_copy(update={"route": "SUBSTITUTION"})
 
-    return {
-        "fit_results": [r.model_dump() for r in fit_results],
+    fit_list = [r.model_dump() for r in fit_results]
+    result_out = {
+        "fit_results": fit_list,
         "best_route": best.route,
         "best_recipe_id": best.recipe_id,
     }
 
+    ctx.state["fit_results"] = fit_list
+    ctx.state["best_route"] = best.route
+    ctx.state["best_recipe_id"] = best.recipe_id
 
-async def get_substitutions_for_missing(missing_items: list[str]) -> dict:
+    return result_out
+
+
+async def get_substitutions_for_missing(ctx: Context, missing_items: list[str]) -> dict:
     """
     부족한 재료 목록을 받아 DB에서 대체재를 조회한다.
     Dynamic Recovery 루프에서 사용한다.
     """
-    from app.db.models.ingredient import Ingredient, IngredientSubstitution
+    from app.db.models.ingredient import IngredientSubstitution
     from sqlalchemy import select
 
     substitution_map: dict[str, list[dict]] = {}
@@ -122,15 +129,9 @@ async def get_substitutions_for_missing(missing_items: list[str]) -> dict:
         for item in missing_items:
             result = await session.execute(
                 select(IngredientSubstitution)
-                .join(
-                    IngredientSubstitution.original_ingredient
-                )
-                .join(
-                    IngredientSubstitution.substitute_ingredient
-                )
-                .where(
-                    IngredientSubstitution.original_ingredient.has(name=item)
-                )
+                .join(IngredientSubstitution.original_ingredient)
+                .join(IngredientSubstitution.substitute_ingredient)
+                .where(IngredientSubstitution.original_ingredient.has(name=item))
             )
             rows = result.scalars().all()
             substitution_map[item] = [
@@ -142,4 +143,5 @@ async def get_substitutions_for_missing(missing_items: list[str]) -> dict:
                 for row in rows
             ]
 
+    ctx.state["substitution_map"] = substitution_map
     return {"substitution_map": substitution_map}

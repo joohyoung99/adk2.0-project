@@ -19,7 +19,7 @@ Root Workflow — 전체 파이프라인 조립.
   END
 """
 from google.adk import Context
-from google.adk.workflow import Edge, FunctionNode, START, Workflow
+from google.adk.workflow import FunctionNode, START, Workflow
 
 from app.agents.branch_agents import cook_now_agent, shopping_agent, substitution_agent
 from app.agents.extractor_agent import input_extractor, parse_input, unpack_request
@@ -40,9 +40,11 @@ def rank_candidates_fn(
     fit_results: list[dict],
     expiring_items: list[dict],
     preferences: dict,
+    ctx: Context,
 ) -> dict:
     """ranking_service 를 FunctionNode 로 래핑. 재정렬된 fit_results 를 덮어쓴다."""
     ranked = _rank_fn(fit_results, expiring_items, preferences)
+    ctx.state["fit_results"] = ranked
     return {"fit_results": ranked}
 
 

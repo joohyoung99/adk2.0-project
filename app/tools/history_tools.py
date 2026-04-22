@@ -1,11 +1,15 @@
 """
 추천 로그 저장 / 조리 이력 관련 FunctionNode 툴.
+ctx 는 ADK 가 자동 주입하며, 명시적 state 기록에 사용합니다.
 """
+from google.adk import Context
+
 from app.db.repositories import recommendation_repository
 from app.db.session import AsyncSessionLocal
 
 
 async def save_recommendation_log(
+    ctx: Context,
     user_id: int,
     user_content: str | None = None,
     fridge_items: list[dict] | None = None,
@@ -43,6 +47,7 @@ async def save_recommendation_log(
             route=best_route,
         )
 
+    ctx.state["log_id"] = log_id
     return {"log_id": log_id}
 
 

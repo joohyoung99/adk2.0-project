@@ -1,7 +1,7 @@
 """
 조건부 분기 LLM 에이전트 3종.
 각 에이전트는 google_search tool을 보유하며,
-DB 매칭 결과가 부족할 경우 자율적으로 검색해 레시피를 생성한다.
+DB 매칭 결과가 부족할 경우 자율적으로 검색해 레시피를 생성
 """
 from google.adk import Agent
 from google.adk.tools import google_search

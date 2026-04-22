@@ -8,7 +8,7 @@ MealContextType = Literal["breakfast", "lunch", "dinner", "snack", "late_night"]
 
 class FridgeRequest(BaseModel):
     """자연어 입력에서 추출한 사용자 요청 스키마"""
-    user_id: int = Field(..., ge=1, description="사용자 ID")
+    user_id: int | None = Field(default=None, ge=1, description="사용자 ID (세션에서 주입)")
     ingredients: list[str] = Field(
         default_factory=list,
         description="사용자가 직접 입력한 재료 목록",
@@ -73,17 +73,6 @@ class RecipeCandidate(BaseModel):
     dietary_tags: list[str] = Field(default_factory=list)
 
 
-class SubstitutionOption(BaseModel):
-    """부족 재료에 대한 대체재 정보."""
-
-    missing: str = Field(..., description="부족한 재료")
-    substitute: str = Field(..., description="대체 가능한 재료")
-    note: str | None = Field(default=None, description="대체 시 참고 메모")
-    substitution_ratio: float | None = Field(
-        default=None,
-        gt=0,
-        description="대체 비율",
-    )
 
 
 class RecipeFitResult(BaseModel):
@@ -103,60 +92,3 @@ class RecipeFitResult(BaseModel):
     route: RouteType = Field(..., description="추천 분기 라벨")
     cookable_now: bool = Field(..., description="현재 재료만으로 즉시 조리 가능 여부")
 
-
-class RecipeRecommendation(BaseModel):
-    """최종 사용자 응답에 포함되는 추천 아이템."""
-
-    recipe_id: int = Field(..., ge=1)
-    title: str = Field(..., description="레시피명")
-    status: Literal["cook_now", "substitution_needed", "shopping_needed"] = Field(
-        ...,
-        description="사용자 노출용 상태",
-    )
-    match_score: float = Field(..., ge=0.0, le=1.0)
-    why_recommended: list[str] = Field(
-        default_factory=list,
-        description="추천 이유 목록",
-    )
-    missing_items: list[str] = Field(
-        default_factory=list,
-        description="부족 재료 목록",
-    )
-    substitutions: list[SubstitutionOption] = Field(
-        default_factory=list,
-        description="대체재 목록",
-    )
-    instruction_summary: str = Field(
-        ...,
-        description="간단 조리 요약",
-    )
-
-
-class RecommendationResponse(BaseModel):
-    """최종 분기 에이전트가 생성하는 응답 스키마."""
-
-    summary: str = Field(..., description="전체 추천 요약")
-    decision: RouteType = Field(..., description="최종 추천 분기")
-    recommendations: list[RecipeRecommendation] = Field(
-        default_factory=list,
-        description="추천 레시피 목록",
-    )
-
-
-class RecoveryLoopResult(BaseModel):
-    """동적 재탐색 루프 결과."""
-
-    status: Literal["RECOVERED", "ESCALATED", "FAILED"] = Field(
-        ...,
-        description="동적 루프 종료 상태",
-    )
-    iterations: int = Field(..., ge=1, description="반복 횟수")
-    final_route: RouteType | None = Field(
-        default=None,
-        description="최종 라우팅 결과",
-    )
-    recovered_recipe_id: int | None = Field(
-        default=None,
-        ge=1,
-        description="복구 성공한 레시피 ID",
-    )

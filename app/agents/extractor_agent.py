@@ -18,13 +18,15 @@ input_extractor = Agent(
 
 
 def unpack_request(ctx: Context) -> dict:
-    """Read `fridge_request` from state and promote each field."""
+    """Read `fridge_request` from state and promote each field.
+    user_id is always preserved from the session (never overwritten by LLM output).
+    """
     req = ctx.state.get("fridge_request", {})
     if hasattr(req, "model_dump"):
         req = req.model_dump()
     if isinstance(req, dict):
-        for key in ("user_id","ingredients", "max_cooking_time", "allowed_tools", "excluded_ingredients", "meal_context"):
-            if key in req:
+        for key in ("ingredients", "max_cooking_time", "allowed_tools", "excluded_ingredients", "meal_context"):
+            if key in req and req[key] is not None:
                 ctx.state[key] = req[key]
     return req if isinstance(req, dict) else {}
 
