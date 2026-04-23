@@ -63,6 +63,11 @@ async def save_recommendation_log(
             )
 
     ctx.state["log_id"] = log_id
+
+    top_titles = [r.get("title") for r in (fit_results or [])[:5] if r.get("title")]
+    seen = ctx.state.get("seen_recipe_titles", [])
+    ctx.state["seen_recipe_titles"] = (seen + top_titles)[-20:]
+
     return {"log_id": log_id}
 
 

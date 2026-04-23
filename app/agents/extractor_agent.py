@@ -33,6 +33,7 @@ def unpack_request(ctx: Context) -> dict:
     ctx.state["excluded_ingredients"] = req.get("excluded_ingredients") or []
     ctx.state["meal_context"] = req.get("meal_context")
     ctx.state.setdefault("recipe_response", "")
+    ctx.state.setdefault("seen_recipe_titles", [])
     return req
 
 

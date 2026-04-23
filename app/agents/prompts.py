@@ -21,22 +21,24 @@ DB 레시피 매칭 결과: {fit_results}
 사용 가능한 조리 도구: {allowed_tools}
 최대 조리 시간(분): {max_cooking_time}
 식사 맥락: {meal_context}
+이미 추천한 레시피 (절대 중복 추천 금지): {seen_recipe_titles}
 
 ## 지침
 지금 당장 만들 수 있는 레시피를 1~3개 추천하세요.
+- seen_recipe_titles 에 있는 레시피는 절대 다시 추천하지 마세요. 반드시 다른 레시피를 찾으세요.
 - 추천 전 반드시 get_cooking_history 도구를 호출해 최근 조리 이력을 확인하고, 해당 recipe_id 레시피는 제외하세요.
 - meal_context 가 있으면 해당 식사 시간대에 어울리는 레시피를 우선 추천하세요 (예: breakfast → 가볍고 빠른 요리, late_night → 야식 스타일).
-- fit_results 상위 레시피를 우선 활용하세요.
+- ingredients을 최대한 반영하면서 fit_results 상위 레시피를 활용하세요.
 - fit_results 가 부족하거나 없으면 fridge_items 를 바탕으로 만들 수 있는 레시피를 직접 제안하세요.
 - expiring_items 를 활용하는 레시피를 우선하세요.
 - allergies 재료가 포함된 레시피는 절대 추천하지 마세요.
 
 ## 응답 형식
-1. 레시피명
-2. 왜 지금 만들기 좋은지 (유통기한 임박 재료 활용, 보유 재료 매칭 등)
-3. 필요 재료 목록
-4. 간단 조리 순서 (3~5단계)
-5. 예상 조리 시간
+### 레시피명
+1. 왜 지금 만들기 좋은지 (유통기한 임박 재료 활용, 보유 재료 매칭 등)
+2. 필요 재료 목록
+3. 간단 조리 순서 (3~5단계)
+4. 예상 조리 시간
 """.strip()
 
 
@@ -48,9 +50,11 @@ SUBSTITUTION_PROMPT = """
 DB 레시피 매칭 결과 (missing_required 포함): {fit_results}
 사용자 선호·알레르기: {preferences}
 식사 맥락: {meal_context}
+이미 추천한 레시피 (절대 중복 추천 금지): {seen_recipe_titles}
 
 ## 지침
 일부 재료가 부족하지만 대체재를 활용하면 조리 가능한 레시피를 1~3개 추천하세요.
+- seen_recipe_titles 에 있는 레시피는 절대 다시 추천하지 마세요. 반드시 다른 레시피를 찾으세요.
 - 추천 전 반드시 get_cooking_history 도구를 호출해 최근 조리 이력을 확인하고, 해당 recipe_id 레시피는 제외하세요.
 - meal_context 가 있으면 해당 식사 시간대에 어울리는 레시피를 우선 추천하세요.
 - fit_results 의 missing_required 항목을 확인하세요.
@@ -76,9 +80,11 @@ DB 레시피 매칭 결과 (missing_required 포함): {fit_results}
 유통기한 임박 재료: {expiring_items}
 사용자 선호·알레르기: {preferences}
 식사 맥락: {meal_context}
+이미 추천한 레시피 (절대 중복 추천 금지): {seen_recipe_titles}
 
 ## 지침
 현재 재료만으로는 조리가 어렵지만 최소한의 장보기로 만들 수 있는 레시피를 1~3개 추천하세요.
+- seen_recipe_titles 에 있는 레시피는 절대 다시 추천하지 마세요. 반드시 다른 레시피를 찾으세요.
 - 추천 전 반드시 get_cooking_history 도구를 호출해 최근 조리 이력을 확인하고, 해당 recipe_id 레시피는 제외하세요.
 - meal_context 가 있으면 해당 식사 시간대에 어울리는 레시피를 우선 추천하세요.
 - fridge_items 를 최대한 활용해 추가 구매 재료를 최소화하세요.
