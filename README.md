@@ -493,6 +493,3 @@ uv run python -m app.main
 
 ---
 
-## 📝 발표용 한 줄 소개
-
-**Fridge2Dish Agent는 ADK 2.0의 Graph-based Workflow, Conditional Routing, Dynamic Workflow 패턴을 결합해 자연어 입력 구조화, 사용자 재고 조회, DB 기반 레시피 매칭, 상태별 분기, Google Search를 활용한 실시간 레시피 생성, 대체재 기반 재추천까지 수행하는 냉장고 재료 기반 레시피 추천 시스템이다.**

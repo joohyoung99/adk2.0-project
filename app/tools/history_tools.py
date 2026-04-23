@@ -1,13 +1,15 @@
 """
-추천 로그 저장 / 조리 이력 관련 FunctionNode 툴.
+추천 로그 저장 / 조리 이력 관련 워크플로우 노드.
 ctx 는 ADK 가 자동 주입하며, 명시적 state 기록에 사용합니다.
 """
 from google.adk import Context
+from google.adk.workflow import node
 
 from app.db.repositories import recommendation_repository
 from app.db.session import AsyncSessionLocal
 
 
+@node
 async def save_recommendation_log(
     ctx: Context,
     user_id: int,
@@ -16,17 +18,19 @@ async def save_recommendation_log(
     preferences: dict | None = None,
     fit_results: list[dict] | None = None,
     best_route: str | None = None,
+    best_recipe_id: int | None = None,
 ) -> dict:
     """
     워크플로우 종료 시점에 state에서 필요한 값을 수집해 DB에 저장한다.
 
     state 키 매핑:
-      user_id       ← state["user_id"]
-      user_content  ← state["user_content"]  (ADK가 자동 주입하는 사용자 원문)
-      fridge_items  ← state["fridge_items"]
-      preferences   ← state["preferences"]
-      fit_results   ← state["fit_results"]
-      best_route    ← state["best_route"]
+      user_id         ← state["user_id"]
+      user_content    ← state["user_content"]
+      fridge_items    ← state["fridge_items"]
+      preferences     ← state["preferences"]
+      fit_results     ← state["fit_results"]
+      best_route      ← state["best_route"]
+      best_recipe_id  ← state["best_recipe_id"]
     """
     context_json = {
         "fridge_items": fridge_items or [],
@@ -46,6 +50,17 @@ async def save_recommendation_log(
             result_json=result_json,
             route=best_route,
         )
+
+    if best_recipe_id:
+        async with AsyncSessionLocal() as session:
+            await recommendation_repository.save_feedback(
+                session,
+                user_id=user_id,
+                recipe_id=best_recipe_id,
+                rating=None,
+                liked=None,
+                feedback_text=None,
+            )
 
     ctx.state["log_id"] = log_id
     return {"log_id": log_id}
@@ -72,11 +87,12 @@ async def save_cooking_feedback(
     return {"history_id": history_id}
 
 
-async def get_recent_cooking_history(user_id: int, limit: int = 10) -> dict:
-    """최근 조리 이력을 조회한다. branch agent 프롬프트에 컨텍스트로 주입 가능."""
+async def get_recent_cooking_history(ctx: Context, user_id: int, limit: int = 10) -> dict:
+    """최근 조리 이력을 조회해 state["cooking_history"]에 저장한다."""
     async with AsyncSessionLocal() as session:
         history = await recommendation_repository.get_recent_history(
             session, user_id=user_id, limit=limit
         )
 
+    ctx.state["cooking_history"] = history
     return {"cooking_history": history}

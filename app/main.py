@@ -25,12 +25,8 @@ SAMPLE_INPUTS = [
 
 load_dotenv()
 
-    
-
-
 
 async def run(user_message: str) -> None:
-
     db_url = os.getenv("DATABASE_URL")
     if not db_url:
         raise ValueError("DATABASE_URL is not set in environment variables. Please set it before running the application.")
@@ -85,6 +81,7 @@ def main() -> None:
     args = parser.parse_args()
 
     message = args.message or SAMPLE_INPUTS[0]
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
     asyncio.run(run(message))
 
 

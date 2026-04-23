@@ -1,10 +1,9 @@
 
-from google.adk import Agent, Context, Event
+from google.adk import Agent, Context
+from google.adk.workflow import START, Workflow, node
+
 from app.agents.prompts import EXTRACT_AGENT_PROMPT
 from app.schemas.agent_io import FridgeRequest
-
-
-from google.adk.workflow import Workflow, FunctionNode, BaseNode, Edge, START
 
 ## 자연어 -> FridgeRequest 객체로 변환하는 에이전트
 input_extractor = Agent(
@@ -17,6 +16,7 @@ input_extractor = Agent(
 )
 
 
+@node
 def unpack_request(ctx: Context) -> dict:
     """Read `fridge_request` from state and promote each field.
     user_id is always preserved from the session (never overwritten by LLM output).
@@ -31,6 +31,7 @@ def unpack_request(ctx: Context) -> dict:
     return req if isinstance(req, dict) else {}
 
 
+@node
 def parse_input(ctx: Context) -> dict:
     """입력 검증 + 정규화 (도구명 소문자 통일, 빈 리스트 기본값 보정)"""
     tool_aliases = {

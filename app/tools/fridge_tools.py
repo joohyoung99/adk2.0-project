@@ -1,16 +1,15 @@
 """
-냉장고 재고 / 사용자 선호 관련 FunctionNode 툴.
-
-FunctionNode(parameter_binding='state') 로 래핑되므로
-함수 파라미터 이름이 state 키와 1:1 매핑됩니다.
+냉장고 재고 / 사용자 선호 관련 워크플로우 노드.
 ctx 는 ADK 가 자동 주입하며, 명시적 state 기록에 사용합니다.
 """
 from google.adk import Context
+from google.adk.workflow import node
 
 from app.db.repositories import fridge_repository, user_repository
 from app.db.session import AsyncSessionLocal
 
 
+@node
 async def load_user_context(user_id: int, ctx: Context) -> dict:
     """
     state["user_id"] 를 받아 DB에서 재고/선호/유통기한 임박 재료를 조회한다.
@@ -35,6 +34,7 @@ async def load_user_context(user_id: int, ctx: Context) -> dict:
     }
 
 
+@node
 async def merge_input_with_fridge(user_id: int, ingredients: list[str], ctx: Context) -> dict:
     """
     state["user_id"], state["ingredients"] 를 받아

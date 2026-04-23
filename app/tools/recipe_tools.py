@@ -1,14 +1,16 @@
 """
-레시피 탐색 / 매칭 평가 / 대체재 조회 관련 FunctionNode 툴.
+레시피 탐색 / 매칭 평가 / 대체재 조회 관련 워크플로우 노드.
 ctx 는 ADK 가 자동 주입하며, 명시적 state 기록에 사용합니다.
 """
 from google.adk import Context
+from google.adk.workflow import node
 
 from app.db.repositories import recipe_repository
 from app.db.session import AsyncSessionLocal
 from app.schemas.agent_io import FridgeItemSnapshot
 
 
+@node
 async def search_candidate_recipes(
     ctx: Context,
     max_cooking_time: int | None = None,
@@ -35,11 +37,13 @@ async def search_candidate_recipes(
     return {"candidates": candidates_list}
 
 
+@node
 async def evaluate_recipe_fit(
     ctx: Context,
     candidates: list[dict],
     fridge_items: list[dict],
     preferences: dict | None = None,
+    ingredients: list[str] | None = None,
 ) -> dict:
     """
     state["candidates"], state["fridge_items"] 를 받아
@@ -68,9 +72,9 @@ async def evaluate_recipe_fit(
                 continue
             fit_results.append(result)
 
-    # DB 후보가 없으면 보유 재료 수로 폴백 라우팅
+    # DB 후보가 없으면 유저가 직접 언급한 재료 수로 폴백 라우팅
     if not fit_results:
-        n = len(fridge_snapshots)
+        n = len(ingredients) if ingredients else len(fridge_snapshots)
         route = "COOK_NOW" if n >= 5 else "SUBSTITUTION" if n >= 3 else "SHOPPING_NEEDED"
         ctx.state["fit_results"] = []
         ctx.state["best_route"] = route
