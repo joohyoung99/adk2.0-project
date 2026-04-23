@@ -26,8 +26,11 @@ class FridgeResponse(BaseModel):
 def _days_until(expires_at: str | None) -> int | None:
     if not expires_at:
         return None
-    delta = date.fromisoformat(expires_at) - date.today()
-    return delta.days
+    try:
+        delta = date.fromisoformat(expires_at) - date.today()
+        return delta.days
+    except ValueError:
+        return None
 
 
 @router.get("/api/fridge/{user_id}", response_model=FridgeResponse)
