@@ -35,22 +35,40 @@ app/
 
 **Request:**
 ```json
-{ "message": "계란이랑 양파 있는데 뭐 만들지?" }
+{
+  "message": "계란이랑 양파 있는데 뭐 만들지?",
+  "session_id": "abc123"
+}
 ```
+`session_id` 는 선택값. 없으면 서버가 새 세션을 생성하고 응답에 포함해 반환.
 
 **Response:**
 ```json
 {
   "response": "계란볶음밥을 추천드려요! ...",
-  "route": "COOK_NOW"
+  "route": "COOK_NOW",
+  "session_id": "abc123"
 }
 ```
 
 내부 동작:
-1. `USER_ID = "1"` 고정 세션으로 ADK `Runner.run_async()` 실행
-2. 이벤트 스트림에서 마지막 텍스트 파트를 `response` 로 수집
-3. 런 완료 후 `session_service.get_session()` 으로 세션 상태를 읽어 `state["best_route"]` 반환
-4. `web.py` 모듈 최상단에 `asyncio.WindowsSelectorEventLoopPolicy()` 설정 (psycopg Windows 호환)
+1. `session_id` 없으면 `session_service.create_session()` 으로 신규 세션 생성
+2. `session_id` 있으면 기존 세션 재사용 → 대화 이어감 (멀티턴)
+3. `USER_ID = "1"` 고정, ADK `Runner.run_async()` 실행
+4. 이벤트 스트림에서 마지막 텍스트 파트를 `response` 로 수집
+5. 런 완료 후 `session_service.get_session()` 으로 세션 상태를 읽어 `state["best_route"]` 반환
+6. `web.py` 모듈 최상단에 `asyncio.WindowsSelectorEventLoopPolicy()` 설정 (psycopg Windows 호환)
+
+### 멀티턴 흐름
+
+```
+첫 메시지  → {message} → 서버가 session_id 생성 → {response, session_id} 반환
+             브라우저 localStorage에 session_id 저장
+
+이후 메시지 → {message, session_id} → 기존 세션 재사용 → 대화 context 유지
+```
+
+브라우저를 새로고침하면 localStorage 의 session_id 를 읽어 이전 대화를 복원한다.
 
 ### `GET /api/fridge/{user_id}`
 
