@@ -11,6 +11,6 @@ wheels/
 
 
 .env
-
+.superpowers/
 .claude/
 .codex/

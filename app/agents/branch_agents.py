@@ -3,8 +3,14 @@
 DB 매칭 결과가 부족할 경우 Gemini 내장 지식으로 레시피를 생성한다.
 """
 from google.adk import Agent
+from google.adk.tools import google_search
 
-from app.agents.prompts import COOK_NOW_PROMPT, SHOPPING_PROMPT, SUBSTITUTION_PROMPT
+from app.agents.prompts import (
+    COOK_NOW_PROMPT,
+    IMAGE_SEARCH_PROMPT,
+    SHOPPING_PROMPT,
+    SUBSTITUTION_PROMPT,
+)
 from app.tools.agent_tools import get_cooking_history, get_substitutions
 
 
@@ -14,6 +20,7 @@ cook_now_agent = Agent(
     model="gemini-2.5-flash",
     instruction=COOK_NOW_PROMPT,
     tools=[get_cooking_history],
+    output_key="recipe_response",
 )
 
 substitution_agent = Agent(
@@ -22,6 +29,7 @@ substitution_agent = Agent(
     model="gemini-2.5-flash",
     instruction=SUBSTITUTION_PROMPT,
     tools=[get_cooking_history, get_substitutions],
+    output_key="recipe_response",
 )
 
 shopping_agent = Agent(
@@ -30,4 +38,15 @@ shopping_agent = Agent(
     model="gemini-2.5-flash",
     instruction=SHOPPING_PROMPT,
     tools=[get_cooking_history],
+    output_key="recipe_response",
+)
+
+
+image_search_agent = Agent(
+    name="ImageSearchAgent",
+    description="추천된 레시피에 어울리는 이미지 URL을 반환하는 에이전트",
+    model="gemini-2.5-flash",
+    instruction=IMAGE_SEARCH_PROMPT,
+    tools=[google_search],
+    output_key="recipe_image",
 )

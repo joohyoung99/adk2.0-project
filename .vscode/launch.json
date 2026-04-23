@@ -9,8 +9,13 @@
       "python": "${workspaceFolder}/.venv/Scripts/python.exe",
       "cwd": "${workspaceFolder}",
       "envFile": "${workspaceFolder}/.env",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}",
+        "PYTHONUTF8": "1"
+      },
       "console": "integratedTerminal",
-      "justMyCode": false
+      "justMyCode": false,
+      "timeout": 60000
     },
     {
       "name": "냉털쉐프 Agent (직접 입력)",
@@ -20,9 +25,31 @@
       "python": "${workspaceFolder}/.venv/Scripts/python.exe",
       "cwd": "${workspaceFolder}",
       "envFile": "${workspaceFolder}/.env",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}",
+        "PYTHONUTF8": "1"
+      },
       "args": ["${input:userMessage}"],
       "console": "integratedTerminal",
-      "justMyCode": false
+      "justMyCode": false,
+      "timeout": 60000
+    },
+    {
+      "name": "냉털쉐프 Web UI",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "python": "${workspaceFolder}/.venv/Scripts/python.exe",
+      "args": ["app.web:app", "--reload", "--port", "8000"],
+      "cwd": "${workspaceFolder}",
+      "envFile": "${workspaceFolder}/.env",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}",
+        "PYTHONUTF8": "1"
+      },
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "timeout": 60000
     },
     {
       "name": "Seed DB",
@@ -32,8 +59,13 @@
       "python": "${workspaceFolder}/.venv/Scripts/python.exe",
       "cwd": "${workspaceFolder}",
       "envFile": "${workspaceFolder}/.env",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}",
+        "PYTHONUTF8": "1"
+      },
       "console": "integratedTerminal",
-      "justMyCode": false
+      "justMyCode": false,
+      "timeout": 60000
     }
   ],
   "inputs": [

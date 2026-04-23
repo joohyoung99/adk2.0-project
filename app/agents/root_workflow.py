@@ -17,12 +17,18 @@ Root Workflow — 전체 파이프라인 조립.
       ├─ SUBSTITUTION    → substitution_agent(LLM + google_search)
       └─ SHOPPING_NEEDED → shopping_agent   (LLM + google_search)
   → save_log        (@node)
+  → image_search    (LLM + google_search)
   END
 """
 from google.adk import Context
 from google.adk.workflow import START, Workflow, node
 
-from app.agents.branch_agents import cook_now_agent, shopping_agent, substitution_agent
+from app.agents.branch_agents import (
+    cook_now_agent,
+    image_search_agent,
+    shopping_agent,
+    substitution_agent,
+)
 from app.agents.dynamic_recovery import dynamic_recovery
 from app.agents.extractor_agent import input_extractor, parse_input, unpack_request
 from app.services.ranking_service import rank_candidates as _rank_fn
@@ -78,5 +84,8 @@ root_workflow = Workflow(
         (cook_now_agent,     save_recommendation_log),
         (substitution_agent, save_recommendation_log),
         (shopping_agent,     save_recommendation_log),
+
+        # 레시피 이미지 찾아오기
+        (save_recommendation_log, image_search_agent),
     ],
 )

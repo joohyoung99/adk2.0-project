@@ -3,9 +3,15 @@
 
 실행: uv run python -m app.main
 """
-import os
-from dotenv import load_dotenv
 import asyncio
+import os
+import sys
+
+# psycopg 는 Windows ProactorEventLoop 과 호환되지 않으므로 임포트 전에 설정
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
+from dotenv import load_dotenv
 
 from google.adk import Runner
 from google.adk.sessions import InMemorySessionService
@@ -81,7 +87,6 @@ def main() -> None:
     args = parser.parse_args()
 
     message = args.message or SAMPLE_INPUTS[0]
-    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
     asyncio.run(run(message))
 
 
