@@ -20,15 +20,20 @@ input_extractor = Agent(
 def unpack_request(ctx: Context) -> dict:
     """Read `fridge_request` from state and promote each field.
     user_id is always preserved from the session (never overwritten by LLM output).
+    All optional fields are always written to state so prompt templates never get KeyError.
     """
     req = ctx.state.get("fridge_request", {})
     if hasattr(req, "model_dump"):
         req = req.model_dump()
-    if isinstance(req, dict):
-        for key in ("ingredients", "max_cooking_time", "allowed_tools", "excluded_ingredients", "meal_context"):
-            if key in req and req[key] is not None:
-                ctx.state[key] = req[key]
-    return req if isinstance(req, dict) else {}
+    if not isinstance(req, dict):
+        req = {}
+    ctx.state["ingredients"] = req.get("ingredients") or []
+    ctx.state["max_cooking_time"] = req.get("max_cooking_time")
+    ctx.state["allowed_tools"] = req.get("allowed_tools") or []
+    ctx.state["excluded_ingredients"] = req.get("excluded_ingredients") or []
+    ctx.state["meal_context"] = req.get("meal_context")
+    ctx.state.setdefault("recipe_response", "")
+    return req
 
 
 @node

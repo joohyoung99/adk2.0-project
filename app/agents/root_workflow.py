@@ -13,11 +13,10 @@ Root Workflow — 전체 파이프라인 조립.
   → rank_candidates (@node)
   → dynamic_recovery(@node)  ← 대체재로 COOK_NOW 승격 시도
   → fit_router      (@node)  ← ctx.route 세팅
-      ├─ COOK_NOW        → cook_now_agent    (LLM + google_search)
-      ├─ SUBSTITUTION    → substitution_agent(LLM + google_search)
-      └─ SHOPPING_NEEDED → shopping_agent   (LLM + google_search)
+      ├─ COOK_NOW        → cook_now_agent    (LLM)
+      ├─ SUBSTITUTION    → substitution_agent(LLM)
+      └─ SHOPPING_NEEDED → shopping_agent   (LLM)
   → save_log        (@node)
-  → image_search    (LLM + google_search)
   END
 """
 from google.adk import Context
@@ -25,7 +24,6 @@ from google.adk.workflow import START, Workflow, node
 
 from app.agents.branch_agents import (
     cook_now_agent,
-    image_search_agent,
     shopping_agent,
     substitution_agent,
 )
@@ -84,8 +82,5 @@ root_workflow = Workflow(
         (cook_now_agent,     save_recommendation_log),
         (substitution_agent, save_recommendation_log),
         (shopping_agent,     save_recommendation_log),
-
-        # 레시피 이미지 찾아오기
-        (save_recommendation_log, image_search_agent),
     ],
 )

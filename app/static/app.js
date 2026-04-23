@@ -7,10 +7,7 @@ const ROUTE_LABELS = {
 };
 
 if (window.marked) {
-  marked.use({
-    breaks: true,
-    gfm: true,
-  });
+  marked.use({ gfm: true });
 }
 
 function getSessionId() {
@@ -126,13 +123,7 @@ async function sendMessage() {
 
     setSessionId(data.session_id);
     removeThinkingBubble(thinkingId);
-    appendAgentBubble(
-      data.response,
-      data.route,
-      data.image_url,
-      data.image_source_url,
-      data.image_alt,
-    );
+    appendAgentBubble(data.response, data.route);
   } catch (error) {
     removeThinkingBubble(thinkingId);
     appendAgentBubble(`오류가 발생했습니다. 잠시 후 다시 시도해주세요.\n${error.message}`, null);
@@ -179,7 +170,7 @@ function removeThinkingBubble(id) {
   if (el) el.remove();
 }
 
-function appendAgentBubble(text, route, imageUrl = null, imageSourceUrl = null, imageAlt = null) {
+function appendAgentBubble(text, route) {
   const container = document.getElementById("chat-container");
   const div = document.createElement("div");
   div.className = "bubble-agent";
@@ -191,7 +182,6 @@ function appendAgentBubble(text, route, imageUrl = null, imageSourceUrl = null, 
   div.innerHTML = `
     <div class="bg-white border p-3">
       ${routeHtml}<div class="agent-markdown">${renderMarkdown(text || "(응답 없음)")}</div>
-      ${renderRecipeImage(imageUrl, imageSourceUrl, imageAlt)}
     </div>`;
   container.appendChild(div);
   scrollChatToBottom();
@@ -213,33 +203,6 @@ function renderMarkdown(text) {
   return marked.parse(text);
 }
 
-function renderRecipeImage(imageUrl, sourceUrl, alt) {
-  if (imageUrl) {
-    const safeUrl = escapeHtml(imageUrl);
-    const safeAlt = escapeHtml(alt || "추천 레시피 이미지");
-    const sourceLink = sourceUrl
-      ? `<a href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer" class="small text-muted">이미지 출처</a>`
-      : "";
-
-    return `
-      <div class="recipe-image mt-3">
-        <img src="${safeUrl}" alt="${safeAlt}" loading="lazy" referrerpolicy="no-referrer"
-          onerror="this.closest('.recipe-image').remove()">
-        ${sourceLink}
-      </div>`;
-  }
-
-  if (sourceUrl) {
-    return `
-      <div class="mt-3">
-        <a href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-success">
-          관련 이미지 보기
-        </a>
-      </div>`;
-  }
-
-  return "";
-}
 
 function escapeHtml(value) {
   return String(value || "")

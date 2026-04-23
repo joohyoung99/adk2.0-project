@@ -1,7 +1,4 @@
 import os
-import json
-import re
-from typing import Any
 
 from fastapi import APIRouter, HTTPException
 from google.adk import Runner
@@ -16,7 +13,6 @@ router = APIRouter()
 
 APP_NAME = "fridge2dish"
 USER_ID = "1"
-RECIPE_AGENT_NAMES = {"CookNowAgent", "SubstitutionAgent", "ShoppingAgent"}
 SESSION_BACKEND = os.getenv("ADK_SESSION_BACKEND", "memory").lower()
 MEMORY_SESSION_SERVICE = InMemorySessionService()
 
@@ -30,9 +26,6 @@ class ChatResponse(BaseModel):
     response: str
     route: str | None
     session_id: str
-    image_url: str | None = None
-    image_source_url: str | None = None
-    image_alt: str | None = None
 
 
 async def _get_or_create_session(
@@ -61,32 +54,6 @@ def _get_session_service(db_url: str) -> DatabaseSessionService | InMemorySessio
     return MEMORY_SESSION_SERVICE
 
 
-def _extract_image_payload(value: Any) -> dict[str, str | None]:
-    if not value:
-        return {"image_url": None, "source_url": None, "alt": None}
-
-    if isinstance(value, dict):
-        data = value
-    else:
-        text = str(value).strip()
-        text = re.sub(r"^```(?:json)?\s*|\s*```$", "", text, flags=re.IGNORECASE)
-        try:
-            data = json.loads(text)
-        except json.JSONDecodeError:
-            return {"image_url": None, "source_url": None, "alt": None}
-
-    return {
-        "image_url": data.get("image_url"),
-        "source_url": data.get("source_url"),
-        "alt": data.get("alt"),
-    }
-
-
-def _looks_like_image_payload(text: str) -> bool:
-    normalized = text.strip().lower()
-    return "image_url" in normalized and ("source_url" in normalized or normalized.startswith("{"))
-
-
 @router.post("/api/chat", response_model=ChatResponse)
 async def chat(req: ChatRequest) -> ChatResponse:
     db_url = os.getenv("DATABASE_URL")
@@ -106,20 +73,12 @@ async def chat(req: ChatRequest) -> ChatResponse:
         parts=[types.Part(text=req.message)],
     )
 
-    final_response = ""
-    async for event in runner.run_async(
+    async for _ in runner.run_async(
         user_id=USER_ID,
         session_id=session.id,
         new_message=new_message,
     ):
-        author = getattr(event, "author", None)
-        if event.content and event.content.parts:
-            for part in event.content.parts:
-                if hasattr(part, "text") and part.text:
-                    if author in RECIPE_AGENT_NAMES:
-                        final_response = part.text
-                    elif author != "ImageSearchAgent" and not _looks_like_image_payload(part.text):
-                        final_response = part.text
+        pass
 
     updated_session = await session_service.get_session(
         app_name=APP_NAME,
@@ -127,17 +86,10 @@ async def chat(req: ChatRequest) -> ChatResponse:
         session_id=session.id,
     )
     route = updated_session.state.get("best_route") if updated_session else None
-    if not final_response and updated_session:
-        final_response = updated_session.state.get("recipe_response", "")
-    image_payload = _extract_image_payload(
-        updated_session.state.get("recipe_image") if updated_session else None
-    )
+    final_response = updated_session.state.get("recipe_response", "") if updated_session else ""
 
     return ChatResponse(
         response=final_response or "(응답 없음)",
         route=route,
         session_id=session.id,
-        image_url=image_payload["image_url"],
-        image_source_url=image_payload["source_url"],
-        image_alt=image_payload["alt"],
     )
