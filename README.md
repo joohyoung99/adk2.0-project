@@ -1,6 +1,6 @@
-# 냉털쉐프    Agent
+# 냉장고 기반 레시피 추천 및 장보기 최적화 멀티에이전트 시스템
 
-ADK 2.0 기반의 **냉장고 재료 기반 레시피 추천 워크플로우 시스템**입니다.
+ADK 2.0 기반의 **냉장고 기반 레시피 추천 및 장보기 최적화 멀티에이전트 시스템**입니다.
 
 사용자 자연어 입력, PostgreSQL에 저장된 냉장고 재고/선호 정보를 결합해 **레시피 추천**, **조건부 분기**, **대체재 기반 재시도**를 수행합니다. DB 후보가 부족한 경우 branch agent가 LLM 지식으로 직접 레시피를 제안합니다. 
 이 프로젝트는 ADK 2.0 예시의 세 가지 패턴을 함께 반영합니다.
@@ -495,3 +495,51 @@ uv run python -m app.main
 
 ---
 
+## 🔌 A2A + Filesystem MCP 확장
+
+### 사전 요구사항
+
+- **Node.js 및 npx**: filesystem MCP server 실행에 필요
+  ```bash
+  node --version  # v18+ 권장
+  npx --version
+  ```
+
+### 실행 방법
+
+1. **메인 서버 실행** (기존):
+   ```bash
+   uv run uvicorn app.web:app --reload --port 8000
+   ```
+
+2. **MarketPriceAgent A2A 서버 실행** (별도 터미널):
+   ```bash
+   uv run uvicorn app.agents.market_a2a_app:app --port 8001
+   ```
+   또는:
+   ```bash
+   uv run python -m app.agents.market_a2a_app
+   ```
+
+3. **환경변수 설정** (`.env`):
+   ```
+   MARKET_A2A_URL=http://localhost:8001
+   MARKET_DATA_DIR=./data/market_catalog
+   ```
+
+### 아키텍처
+
+```
+SHOPPING_NEEDED route
+  → ShoppingAgent (sub_agents=[market_price_remote_agent])
+      → RemoteA2aAgent → HTTP → MarketPriceAgent A2A 서버 (localhost:8001)
+                                    → McpToolset (tool_filter: read-only)
+                                        → npx @modelcontextprotocol/server-filesystem
+                                            → data/market_catalog/*.json
+```
+
+### 주의사항
+
+- 가격 정보는 **로컬 catalog 기준 가격 후보**입니다. 실제 가격·재고·배송비와 다를 수 있습니다.
+- A2A 서버가 실행 중이지 않으면 ShoppingAgent는 레시피와 부족 재료 목록만 반환합니다.
+- catalog 파일 업데이트: `data/market_catalog/*.json`의 `updated_at`을 갱신하세요.
