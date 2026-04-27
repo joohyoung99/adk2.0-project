@@ -70,3 +70,46 @@ async def get_substitutions(missing_items: list[str], tool_context: ToolContext)
 
     tool_context.state["substitution_map"] = substitution_map
     return {"substitution_map": substitution_map}
+
+
+def compare_market_prices_for_missing(
+    tool_context: ToolContext,
+    missing_items: list[str] | None = None,
+    recipe_title: str | None = None,
+) -> dict:
+    """현재 state의 부족 재료를 기준으로 로컬 catalog 가격 후보를 비교한다.
+
+    ShoppingAgent가 A2A 위임 인자를 비워 보내는 경우를 피하기 위해,
+    missing_items가 비어 있으면 state["missing_items"]를 우선 사용하고,
+    그래도 없으면 사용자 요청 재료 중 수량이 없는 항목을 구매 필요 재료로 복구한다.
+    """
+    from app.agents.market_price_agent import compare_market_prices
+
+    items = [item.strip() for item in (missing_items or []) if item and item.strip()]
+    if not items:
+        items = [
+            item.strip()
+            for item in tool_context.state.get("missing_items", [])
+            if item and item.strip()
+        ]
+
+    if not items:
+        fridge_items = tool_context.state.get("fridge_items", [])
+        available_names = {
+            item.get("ingredient_name")
+            for item in fridge_items
+            if item.get("quantity") is not None
+        }
+        seen: set[str] = set()
+        for item in tool_context.state.get("ingredients", []):
+            normalized = item.strip()
+            if normalized and normalized not in available_names and normalized not in seen:
+                items.append(normalized)
+                seen.add(normalized)
+
+    market_plan = compare_market_prices(
+        missing_items=items,
+        recipe_title=recipe_title,
+    )
+    tool_context.state["market_plan"] = market_plan
+    return market_plan

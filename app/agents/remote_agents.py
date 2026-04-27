@@ -6,6 +6,10 @@ import os
 
 from google.adk.agents.remote_a2a_agent import RemoteA2aAgent
 
+from app.env import load_project_env
+
+load_project_env()
+
 try:
     from a2a.utils.constants import AGENT_CARD_WELL_KNOWN_PATH
 except ImportError:

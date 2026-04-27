@@ -10,6 +10,29 @@ from app.db.session import AsyncSessionLocal
 from app.schemas.agent_io import FridgeItemSnapshot
 
 
+def _get_requested_missing_items(
+    ingredients: list[str] | None,
+    fridge_items: list[FridgeItemSnapshot],
+) -> list[str]:
+    """Return requested ingredients that are not already in the merged fridge list."""
+    if not ingredients:
+        return []
+
+    available_names = {
+        item.ingredient_name
+        for item in fridge_items
+        if item.quantity is not None
+    }
+    missing: list[str] = []
+    seen: set[str] = set()
+    for item in ingredients:
+        normalized = item.strip()
+        if normalized and normalized not in available_names and normalized not in seen:
+            missing.append(normalized)
+            seen.add(normalized)
+    return missing
+
+
 @node
 async def search_candidate_recipes(
     ctx: Context,
@@ -74,11 +97,14 @@ async def evaluate_recipe_fit(
 
     # DB 후보가 없으면 유저가 직접 언급한 재료 수로 폴백 라우팅
     if not fit_results:
+        missing_items = _get_requested_missing_items(ingredients, fridge_snapshots)
         n = len(ingredients) if ingredients else len(fridge_snapshots)
         route = "COOK_NOW" if n >= 5 else "SUBSTITUTION" if n >= 3 else "SHOPPING_NEEDED"
         ctx.state["fit_results"] = []
         ctx.state["best_route"] = route
         ctx.state["best_recipe_id"] = None
+        ctx.state["missing_items"] = missing_items
+        ctx.state["route_reason"] = "NO_DB_CANDIDATE_FOR_REQUEST_CONSTRAINTS"
         return {"fit_results": [], "best_route": route, "best_recipe_id": None}
 
     # 점수 내림차순 정렬
@@ -115,6 +141,12 @@ async def evaluate_recipe_fit(
     ctx.state["fit_results"] = fit_list
     ctx.state["best_route"] = best.route
     ctx.state["best_recipe_id"] = best.recipe_id
+    ctx.state["missing_items"] = best.missing_required
+    ctx.state["route_reason"] = (
+        "MISSING_REQUIRED_INGREDIENTS"
+        if best.missing_required
+        else "ALL_REQUIRED_INGREDIENTS_AVAILABLE"
+    )
 
     return result_out
 

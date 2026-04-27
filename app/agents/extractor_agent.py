@@ -34,6 +34,8 @@ def unpack_request(ctx: Context) -> dict:
     ctx.state["meal_context"] = req.get("meal_context")
     ctx.state.setdefault("recipe_response", "")
     ctx.state.setdefault("seen_recipe_titles", [])
+    ctx.state.setdefault("missing_items", [])
+    ctx.state.setdefault("route_reason", "")
     return req
 
 

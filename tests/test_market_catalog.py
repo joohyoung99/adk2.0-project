@@ -111,6 +111,53 @@ def test_market_price_agent_import():
     assert market_price_agent.name == "MarketPriceAgent"
 
 
+def test_compare_market_prices_uses_local_catalog():
+    from app.agents.market_price_agent import compare_market_prices
+
+    result = compare_market_prices(["소고기", "연어"])
+
+    assert result["offers"]
+    assert any(offer["ingredient"] == "소고기" and offer["market"] == "Emart" for offer in result["offers"])
+    assert any(offer["ingredient"] == "연어" and offer["confidence"] == "low" for offer in result["offers"])
+    assert result["recommended_market"] is not None
+    assert "연어" in result["recommended_market"]["missing_items"]
+
+
+def test_compare_market_prices_for_missing_falls_back_to_state_missing_items():
+    from app.tools.agent_tools import compare_market_prices_for_missing
+
+    tool_context = type("ToolContextStub", (), {"state": {"missing_items": ["소고기"]}})()
+
+    result = compare_market_prices_for_missing(tool_context)
+
+    assert any(offer["ingredient"] == "소고기" for offer in result["offers"])
+    assert tool_context.state["market_plan"] == result
+
+
+def test_compare_market_prices_for_missing_recovers_quantity_unknown_request_items():
+    from app.tools.agent_tools import compare_market_prices_for_missing
+
+    tool_context = type(
+        "ToolContextStub",
+        (),
+        {
+            "state": {
+                "missing_items": [],
+                "ingredients": ["연어"],
+                "fridge_items": [
+                    {"ingredient_name": "연어", "quantity": None},
+                    {"ingredient_name": "계란", "quantity": 6.0},
+                ],
+            }
+        },
+    )()
+
+    result = compare_market_prices_for_missing(tool_context)
+
+    assert any(offer["ingredient"] == "연어" for offer in result["offers"])
+    assert "연어" in result["recommended_market"]["missing_items"]
+
+
 def test_market_a2a_app_import():
     from app.agents.market_a2a_app import app as a2a_app  # noqa: F401
     assert a2a_app is not None

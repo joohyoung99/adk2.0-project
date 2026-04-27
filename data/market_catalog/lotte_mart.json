@@ -112,6 +112,17 @@
       "price": 4800,
       "in_stock": true,
       "note": "샘플 catalog 데이터"
+    },
+    {
+      "canonical_ingredient": "연어",
+      "aliases": ["연어", "salmon"],
+      "product_name": "국내산 연어 300g",
+      "unit": "300g",
+      "quantity_value": 300,
+      "quantity_unit": "g",
+      "price": 3400,
+      "in_stock": true,
+      "note": "샘플 catalog 데이터"
     }
   ]
 }

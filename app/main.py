@@ -11,12 +11,14 @@ import sys
 if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-from dotenv import load_dotenv
-
 from google.adk import Runner
 from google.adk.sessions import InMemorySessionService
 from google.adk.sessions.database_session_service import DatabaseSessionService
 from google.genai import types
+
+from app.env import load_project_env
+
+load_project_env()
 
 from app.agents.root_workflow import root_workflow
 
@@ -28,8 +30,6 @@ SAMPLE_INPUTS = [
     "냉장고에 두부랑 김치 있는데 매운거 말고 저녁 뭐 해먹지?",
     "콩나물이랑 대파 있어. 냄비 있고 20분 안에 만들 수 있는 거 알려줘",
 ]
-
-load_dotenv()
 
 
 async def run(user_message: str) -> None:

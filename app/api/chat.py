@@ -7,6 +7,11 @@ from google.adk.sessions.database_session_service import DatabaseSessionService
 from google.genai import types
 from pydantic import BaseModel, Field
 
+from app.env import load_project_env
+from app.services.response_formatter import ensure_user_facing_response
+
+load_project_env()
+
 from app.agents.root_workflow import root_workflow
 
 router = APIRouter()
@@ -87,6 +92,10 @@ async def chat(req: ChatRequest) -> ChatResponse:
     )
     route = updated_session.state.get("best_route") if updated_session else None
     final_response = updated_session.state.get("recipe_response", "") if updated_session else ""
+    final_response = ensure_user_facing_response(
+        final_response,
+        updated_session.state if updated_session else {},
+    )
 
     return ChatResponse(
         response=final_response or "(응답 없음)",

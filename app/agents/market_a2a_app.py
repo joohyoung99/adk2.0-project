@@ -16,6 +16,10 @@ if sys.platform == "win32":
 import uvicorn
 from google.adk.a2a.utils.agent_to_a2a import to_a2a
 
+from app.env import load_project_env
+
+load_project_env()
+
 from app.agents.market_price_agent import market_price_agent
 
 _PORT = int(os.getenv("MARKET_A2A_PORT", "8001"))
