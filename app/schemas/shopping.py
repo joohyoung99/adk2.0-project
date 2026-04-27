@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Literal, Optional
 from pydantic import BaseModel
 
 
@@ -15,7 +15,7 @@ class PriceOffer(BaseModel):
     in_stock: bool
     source_file: str
     updated_at: str
-    confidence: str  # "high" | "medium" | "low"
+    confidence: Literal["high", "medium", "low"]
     note: Optional[str] = None
 
 

@@ -46,7 +46,6 @@ def test_ingredient_aliases_schema():
 
 def test_shopping_schema_import():
     from app.schemas.shopping import PriceOffer, RecommendedMarket, MarketPlan  # noqa: F401
-    assert True
 
 
 def test_price_offer_creation():
