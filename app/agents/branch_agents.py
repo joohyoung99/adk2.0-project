@@ -19,7 +19,6 @@ cook_now_agent = Agent(
     instruction=COOK_NOW_PROMPT,
     tools=[get_cooking_history],
     output_key="recipe_response",
-    output_schema=str,
 )
 
 substitution_agent = Agent(
@@ -29,7 +28,6 @@ substitution_agent = Agent(
     instruction=SUBSTITUTION_PROMPT,
     tools=[get_cooking_history, get_substitutions],
     output_key="recipe_response",
-    output_schema=str,
 )
 
 shopping_agent = Agent(
@@ -39,7 +37,6 @@ shopping_agent = Agent(
     instruction=SHOPPING_PROMPT,
     tools=[get_cooking_history],
     output_key="recipe_response",
-    output_schema=str,
 )
 
 
