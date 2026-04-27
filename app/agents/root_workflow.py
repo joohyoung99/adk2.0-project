@@ -47,10 +47,11 @@ def rank_candidates_fn(
     expiring_items: list[dict],
     preferences: dict,
     fridge_items: list[dict],
+    ingredients: list[str],
     ctx: Context,
 ) -> dict:
     """ranking_service 를 노드로 래핑. 재정렬된 fit_results 를 덮어쓴다."""
-    ranked = _rank_fn(fit_results, expiring_items, preferences, fridge_items)
+    ranked = _rank_fn(fit_results, expiring_items, preferences, fridge_items, ingredients)
     ctx.state["fit_results"] = ranked
     return {"fit_results": ranked}
 
