@@ -104,3 +104,8 @@ def test_market_plan_creation():
     )
     assert plan.recommended_market.market == "Emart"
     assert len(plan.warnings) == 1
+
+
+def test_market_price_agent_import():
+    from app.agents.market_price_agent import market_price_agent  # noqa: F401
+    assert market_price_agent.name == "MarketPriceAgent"
