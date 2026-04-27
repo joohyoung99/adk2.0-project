@@ -9,7 +9,10 @@ from google.adk.agents.remote_a2a_agent import RemoteA2aAgent
 try:
     from a2a.utils.constants import AGENT_CARD_WELL_KNOWN_PATH
 except ImportError:
-    AGENT_CARD_WELL_KNOWN_PATH = "/.well-known/agent.json"
+    try:
+        from google.adk.agents.remote_a2a_agent import AGENT_CARD_WELL_KNOWN_PATH
+    except ImportError:
+        AGENT_CARD_WELL_KNOWN_PATH = "/.well-known/agent.json"
 
 MARKET_A2A_URL = os.getenv("MARKET_A2A_URL", "http://localhost:8001")
 
