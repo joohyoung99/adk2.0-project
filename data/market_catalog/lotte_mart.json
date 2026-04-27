@@ -1,0 +1,117 @@
+{
+  "market": "LotteMart",
+  "updated_at": "2026-04-27",
+  "currency": "KRW",
+  "items": [
+    {
+      "canonical_ingredient": "대파",
+      "aliases": ["파", "대파", "green onion", "spring onion"],
+      "product_name": "국내산 대파 300g",
+      "unit": "300g",
+      "quantity_value": 300,
+      "quantity_unit": "g",
+      "price": 1490,
+      "in_stock": true,
+      "note": "샘플 catalog 데이터"
+    },
+    {
+      "canonical_ingredient": "김치",
+      "aliases": ["김치", "배추김치", "포기김치"],
+      "product_name": "롯데 비비고 포기김치 900g",
+      "unit": "900g",
+      "quantity_value": 900,
+      "quantity_unit": "g",
+      "price": 9200,
+      "in_stock": true,
+      "note": "샘플 catalog 데이터"
+    },
+    {
+      "canonical_ingredient": "두부",
+      "aliases": ["두부", "tofu"],
+      "product_name": "롯데 두부 찌개용 350g",
+      "unit": "350g",
+      "quantity_value": 350,
+      "quantity_unit": "g",
+      "price": 2490,
+      "in_stock": false,
+      "note": "샘플 catalog 데이터 - 재고 없음 예시"
+    },
+    {
+      "canonical_ingredient": "계란",
+      "aliases": ["계란", "달걀", "egg"],
+      "product_name": "롯데 신선란 10구",
+      "unit": "10구",
+      "quantity_value": 10,
+      "quantity_unit": "개",
+      "price": 3290,
+      "in_stock": true,
+      "note": "샘플 catalog 데이터"
+    },
+    {
+      "canonical_ingredient": "양파",
+      "aliases": ["양파", "onion"],
+      "product_name": "국내산 양파 망 1.2kg",
+      "unit": "1.2kg",
+      "quantity_value": 1200,
+      "quantity_unit": "g",
+      "price": 2690,
+      "in_stock": true,
+      "note": "샘플 catalog 데이터"
+    },
+    {
+      "canonical_ingredient": "간장",
+      "aliases": ["간장", "soy sauce", "진간장"],
+      "product_name": "롯데 맛있는 간장 500ml",
+      "unit": "500ml",
+      "quantity_value": 500,
+      "quantity_unit": "ml",
+      "price": 2900,
+      "in_stock": true,
+      "note": "샘플 catalog 데이터"
+    },
+    {
+      "canonical_ingredient": "된장",
+      "aliases": ["된장", "doenjang"],
+      "product_name": "순창 재래식 된장 450g",
+      "unit": "450g",
+      "quantity_value": 450,
+      "quantity_unit": "g",
+      "price": 4200,
+      "in_stock": true,
+      "note": "샘플 catalog 데이터"
+    },
+    {
+      "canonical_ingredient": "고추장",
+      "aliases": ["고추장", "gochujang"],
+      "product_name": "순창 고추장 500g",
+      "unit": "500g",
+      "quantity_value": 500,
+      "quantity_unit": "g",
+      "price": 5200,
+      "in_stock": true,
+      "note": "샘플 catalog 데이터"
+    },
+    {
+      "canonical_ingredient": "소고기",
+      "aliases": ["소고기", "beef", "국거리"],
+      "product_name": "호주산 소고기 불고기용 200g",
+      "unit": "200g",
+      "quantity_value": 200,
+      "quantity_unit": "g",
+      "price": 7200,
+      "in_stock": false,
+      "note": "샘플 catalog 데이터 - 재고 없음 예시"
+    },
+    {
+      "canonical_ingredient": "돼지고기",
+      "aliases": ["돼지고기", "pork", "삼겹살"],
+      "product_name": "국내산 삼겹살 200g",
+      "unit": "200g",
+      "quantity_value": 200,
+      "quantity_unit": "g",
+      "price": 4800,
+      "in_stock": true,
+      "note": "샘플 catalog 데이터"
+    }
+  ]
+}

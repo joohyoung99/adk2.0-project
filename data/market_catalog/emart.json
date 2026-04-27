@@ -1,0 +1,117 @@
+{
+  "market": "Emart",
+  "updated_at": "2026-04-27",
+  "currency": "KRW",
+  "items": [
+    {
+      "canonical_ingredient": "대파",
+      "aliases": ["파", "대파", "green onion", "spring onion"],
+      "product_name": "e파머스 대파 400g",
+      "unit": "400g",
+      "quantity_value": 400,
+      "quantity_unit": "g",
+      "price": 1980,
+      "in_stock": true,
+      "note": "샘플 catalog 데이터"
+    },
+    {
+      "canonical_ingredient": "김치",
+      "aliases": ["김치", "배추김치", "포기김치"],
+      "product_name": "이마트 자체브랜드 배추김치 1kg",
+      "unit": "1kg",
+      "quantity_value": 1000,
+      "quantity_unit": "g",
+      "price": 7900,
+      "in_stock": true,
+      "note": "샘플 catalog 데이터"
+    },
+    {
+      "canonical_ingredient": "두부",
+      "aliases": ["두부", "tofu"],
+      "product_name": "e파머스 두부 부침용 280g",
+      "unit": "280g",
+      "quantity_value": 280,
+      "quantity_unit": "g",
+      "price": 1980,
+      "in_stock": true,
+      "note": "샘플 catalog 데이터"
+    },
+    {
+      "canonical_ingredient": "계란",
+      "aliases": ["계란", "달걀", "egg"],
+      "product_name": "e파머스 맛있는계란 15구",
+      "unit": "15구",
+      "quantity_value": 15,
+      "quantity_unit": "개",
+      "price": 4980,
+      "in_stock": true,
+      "note": "샘플 catalog 데이터"
+    },
+    {
+      "canonical_ingredient": "양파",
+      "aliases": ["양파", "onion"],
+      "product_name": "e파머스 양파 1.5kg",
+      "unit": "1.5kg",
+      "quantity_value": 1500,
+      "quantity_unit": "g",
+      "price": 3480,
+      "in_stock": true,
+      "note": "샘플 catalog 데이터"
+    },
+    {
+      "canonical_ingredient": "간장",
+      "aliases": ["간장", "soy sauce", "진간장"],
+      "product_name": "CJ 백설 진간장 840ml",
+      "unit": "840ml",
+      "quantity_value": 840,
+      "quantity_unit": "ml",
+      "price": 4980,
+      "in_stock": true,
+      "note": "샘플 catalog 데이터"
+    },
+    {
+      "canonical_ingredient": "된장",
+      "aliases": ["된장", "doenjang"],
+      "product_name": "CJ 해찬들 된장 1kg",
+      "unit": "1kg",
+      "quantity_value": 1000,
+      "quantity_unit": "g",
+      "price": 7800,
+      "in_stock": true,
+      "note": "샘플 catalog 데이터"
+    },
+    {
+      "canonical_ingredient": "고추장",
+      "aliases": ["고추장", "gochujang"],
+      "product_name": "CJ 해찬들 고추장 500g",
+      "unit": "500g",
+      "quantity_value": 500,
+      "quantity_unit": "g",
+      "price": 5500,
+      "in_stock": true,
+      "note": "샘플 catalog 데이터"
+    },
+    {
+      "canonical_ingredient": "소고기",
+      "aliases": ["소고기", "beef", "국거리"],
+      "product_name": "호주산 소고기 국거리용 200g",
+      "unit": "200g",
+      "quantity_value": 200,
+      "quantity_unit": "g",
+      "price": 6980,
+      "in_stock": true,
+      "note": "샘플 catalog 데이터"
+    },
+    {
+      "canonical_ingredient": "돼지고기",
+      "aliases": ["돼지고기", "pork", "삼겹살"],
+      "product_name": "국내산 돼지 앞다리살 300g",
+      "unit": "300g",
+      "quantity_value": 300,
+      "quantity_unit": "g",
+      "price": 4500,
+      "in_stock": true,
+      "note": "샘플 catalog 데이터"
+    }
+  ]
+}
