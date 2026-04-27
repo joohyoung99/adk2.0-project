@@ -9,6 +9,7 @@ from app.agents.prompts import (
     SHOPPING_PROMPT,
     SUBSTITUTION_PROMPT,
 )
+from app.agents.remote_agents import market_price_remote_agent
 from app.tools.agent_tools import get_cooking_history, get_substitutions
 
 
@@ -36,6 +37,7 @@ shopping_agent = Agent(
     model="gemini-2.5-flash",
     instruction=SHOPPING_PROMPT,
     tools=[get_cooking_history],
+    sub_agents=[market_price_remote_agent],
     output_key="recipe_response",
 )
 

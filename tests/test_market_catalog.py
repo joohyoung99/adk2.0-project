@@ -119,3 +119,9 @@ def test_market_a2a_app_import():
 def test_remote_agents_import():
     from app.agents.remote_agents import market_price_remote_agent  # noqa: F401
     assert market_price_remote_agent.name == "MarketPriceAgent"
+
+
+def test_shopping_agent_has_market_sub_agent():
+    from app.agents.branch_agents import shopping_agent
+    sub_names = [a.name for a in shopping_agent.sub_agents]
+    assert "MarketPriceAgent" in sub_names, f"sub_agents: {sub_names}"
