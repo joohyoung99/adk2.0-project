@@ -8,12 +8,28 @@ resolution-markers = [
 ]
 
 [[package]]
+name = "a2a-sdk"
+version = "0.3.26"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "google-api-core" },
+    { name = "httpx" },
+    { name = "httpx-sse" },
+    { name = "protobuf" },
+    { name = "pydantic" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/be/97/a6840e01795b182ce751ca165430d46459927cde9bfab838087cbb24aef7/a2a_sdk-0.3.26.tar.gz", hash = "sha256:44068e2d037afbb07ab899267439e9bc7eaa7ac2af94f1e8b239933c993ad52d", size = 274598, upload-time = "2026-04-09T15:21:13.902Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/dd/d5/51f4ee1bf3b736add42a542d3c8a3fd3fa85f3d36c17972127defc46c26f/a2a_sdk-0.3.26-py3-none-any.whl", hash = "sha256:754e0573f6d33b225c1d8d51f640efa69cbbed7bdfb06ce9c3540ea9f58d4a91", size = 151016, upload-time = "2026-04-09T15:21:12.35Z" },
+]
+
+[[package]]
 name = "adk2-0-project"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "fastapi" },
-    { name = "google-adk" },
+    { name = "google-adk", extra = ["a2a"] },
     { name = "jinja2" },
     { name = "psycopg", extra = ["binary"] },
     { name = "pydantic" },
@@ -24,7 +40,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "fastapi", specifier = ">=0.136.0" },
-    { name = "google-adk", specifier = ">=2.0.0a3" },
+    { name = "google-adk", extras = ["a2a"], specifier = ">=2.0.0a3" },
     { name = "jinja2", specifier = ">=3.1.0" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.3.3" },
     { name = "pydantic", specifier = ">=2.13.3" },
@@ -682,6 +698,11 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/a3/07/018c523d62c2ec4fe02d9641da76e53daecb141390f33bdbfb8350fe0ecb/google_adk-2.0.0a3.tar.gz", hash = "sha256:8beefc80571443a60d486a8f7c6589a3ad9e519431c2b5af1205c05d833cca55", size = 2567902, upload-time = "2026-04-09T20:38:55.417Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b4/b3/da361516ee5c54ba32cfe6b69cdfcf9a91bb99df1526e6742bbbc55281c6/google_adk-2.0.0a3-py3-none-any.whl", hash = "sha256:1a5400fa56c812eee7e37cc8a9427b2dfcea44fd42303faec170520c0dc5610d", size = 3070574, upload-time = "2026-04-09T20:38:57.74Z" },
+]
+
+[package.optional-dependencies]
+a2a = [
+    { name = "a2a-sdk" },
 ]
 
 [[package]]
