@@ -114,3 +114,8 @@ def test_market_price_agent_import():
 def test_market_a2a_app_import():
     from app.agents.market_a2a_app import app as a2a_app  # noqa: F401
     assert a2a_app is not None
+
+
+def test_remote_agents_import():
+    from app.agents.remote_agents import market_price_remote_agent  # noqa: F401
+    assert market_price_remote_agent.name == "MarketPriceAgent"
