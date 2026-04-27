@@ -497,49 +497,275 @@ uv run python -m app.main
 
 ## 🔌 A2A + Filesystem MCP 확장
 
+SHOPPING_NEEDED 분기에서 **ShoppingAgent**가 부족 재료의 구매처와 가격을 비교하기 위해 **A2A(Agent-to-Agent) 프로토콜**과 **Filesystem MCP**를 활용합니다.
+
+---
+
+### 아키텍처 개요
+
+```
+냉장고 DB 조회
+  → 레시피 후보 탐색 (DB)
+  → 부족 재료 산출 (match_score 계산)
+  → SHOPPING_NEEDED 분기
+      → ShoppingAgent (LLM, sub_agents=[market_price_remote_agent])
+          │
+          │  A2A 프로토콜 (HTTP)
+          ▼
+      MarketPriceAgent A2A 서버 (localhost:8001)
+          │
+          │  Filesystem MCP (stdio)
+          │  npx @modelcontextprotocol/server-filesystem
+          │  allowed: data/market_catalog/
+          ▼
+      homeplus.json / emart.json / lotte_mart.json
+          │
+          ▼
+      구매 후보 + 추천 구매처 반환 → ShoppingAgent가 최종 응답에 통합
+```
+
+---
+
+### 전체 흐름 상세
+
+| 단계 | 담당 | 내용 |
+|------|------|------|
+| 1 | `load_user_context` | PostgreSQL에서 냉장고 재고·유통기한·선호 조회 |
+| 2 | `search_candidate_recipes` | 조리 시간·도구·식단 태그로 DB 레시피 후보 탐색 |
+| 3 | `evaluate_recipe_fit` | 레시피별 `match_score` 계산, 부족 재료 목록 산출 |
+| 4 | `rank_candidates` | 유통기한·사용자 언급 재료 보정 후 최종 랭킹 |
+| 5 | `fit_router` | 부족 재료 상태에 따라 `SHOPPING_NEEDED` 분기 결정 |
+| 6 | `ShoppingAgent` (LLM) | 레시피 추천 + MarketPriceAgent에 구매처 비교 위임 |
+| 7 | `RemoteA2aAgent` | HTTP로 MarketPriceAgent A2A 서버 호출 |
+| 8 | `MarketPriceAgent` | Filesystem MCP로 `data/market_catalog/*.json` 읽기 |
+| 9 | MarketPriceAgent 응답 | 마트별 가격 후보 + 추천 구매처 + 주의사항 반환 |
+| 10 | ShoppingAgent 최종 응답 | 6섹션 형식으로 레시피·장보기 목록·구매처 통합 출력 |
+
+---
+
 ### 사전 요구사항
 
-- **Node.js 및 npx**: filesystem MCP server 실행에 필요
-  ```bash
-  node --version  # v18+ 권장
-  npx --version
-  ```
+#### Python 환경
 
-### 실행 방법
-
-1. **메인 서버 실행** (기존):
-   ```bash
-   uv run uvicorn app.web:app --reload --port 8000
-   ```
-
-2. **MarketPriceAgent A2A 서버 실행** (별도 터미널):
-   ```bash
-   uv run uvicorn app.agents.market_a2a_app:app --port 8001
-   ```
-   또는:
-   ```bash
-   uv run python -m app.agents.market_a2a_app
-   ```
-
-3. **환경변수 설정** (`.env`):
-   ```
-   MARKET_A2A_URL=http://localhost:8001
-   MARKET_DATA_DIR=./data/market_catalog
-   ```
-
-### 아키텍처
-
-```
-SHOPPING_NEEDED route
-  → ShoppingAgent (sub_agents=[market_price_remote_agent])
-      → RemoteA2aAgent → HTTP → MarketPriceAgent A2A 서버 (localhost:8001)
-                                    → McpToolset (tool_filter: read-only)
-                                        → npx @modelcontextprotocol/server-filesystem
-                                            → data/market_catalog/*.json
+```bash
+# a2a-sdk 포함 의존성 설치
+uv sync
+# google-adk[a2a]>=2.0.0a3 가 설치됩니다 (a2a-sdk 0.3.x 포함)
 ```
 
-### 주의사항
+#### Node.js / npx
 
-- 가격 정보는 **로컬 catalog 기준 가격 후보**입니다. 실제 가격·재고·배송비와 다를 수 있습니다.
-- A2A 서버가 실행 중이지 않으면 ShoppingAgent는 레시피와 부족 재료 목록만 반환합니다.
-- catalog 파일 업데이트: `data/market_catalog/*.json`의 `updated_at`을 갱신하세요.
+Filesystem MCP 서버(`@modelcontextprotocol/server-filesystem`)는 Node.js 환경에서 `npx`로 실행됩니다.
+
+```bash
+node --version   # v18 이상 필요
+npx --version
+```
+
+Node.js가 없으면 [https://nodejs.org](https://nodejs.org) 에서 설치하세요.
+
+---
+
+### 환경변수 설정 (`.env`)
+
+`.env_sample`을 `.env`로 복사한 뒤 실제 값을 채웁니다. `.env` 파일은 절대 커밋하지 않습니다.
+
+```env
+# PostgreSQL 연결 URL
+DATABASE_URL=postgresql+psycopg://user:password@localhost:5432/dbname
+
+# Google AI API Key (Gemini 모델 사용)
+GOOGLE_API_KEY=your_google_api_key_here
+
+# ADK 세션 백엔드 (memory | database)
+ADK_SESSION_BACKEND=memory
+
+# MarketPriceAgent A2A 서버 URL (기본값: http://localhost:8001)
+MARKET_A2A_URL=http://localhost:8001
+
+# MarketPriceAgent A2A 서버 포트 (기본값: 8001)
+MARKET_A2A_PORT=8001
+
+# Market catalog 데이터 디렉터리 (기본값: ./data/market_catalog)
+MARKET_DATA_DIR=./data/market_catalog
+```
+
+---
+
+### 실행 순서
+
+#### 1단계 — 의존성 설치
+
+```bash
+uv sync
+```
+
+`a2a-sdk 0.3.x`가 설치되었는지 확인합니다.
+
+```bash
+uv run python -c "from google.adk.agents.remote_a2a_agent import RemoteA2aAgent; print('OK')"
+# OK
+```
+
+#### 2단계 — Market catalog 파일 확인
+
+```bash
+ls data/market_catalog/
+# homeplus.json  emart.json  lotte_mart.json  ingredient_aliases.json
+```
+
+각 파일은 아래 구조를 따릅니다.
+
+```json
+{
+  "market": "Homeplus",
+  "updated_at": "2026-04-27",
+  "currency": "KRW",
+  "items": [
+    {
+      "canonical_ingredient": "계란",
+      "aliases": ["계란", "달걀", "egg"],
+      "product_name": "신선란 10구",
+      "unit": "10구",
+      "price": 3490,
+      "in_stock": true,
+      "note": "샘플 catalog 데이터"
+    }
+  ]
+}
+```
+
+새 마트를 추가하려면 동일한 스키마의 JSON 파일을 `data/market_catalog/`에 생성합니다.
+
+#### 3단계 — MarketPriceAgent A2A 서버 실행 (별도 터미널)
+
+```bash
+uv run uvicorn app.agents.market_a2a_app:app --port 8001
+```
+
+또는:
+
+```bash
+uv run python -m app.agents.market_a2a_app
+```
+
+#### 4단계 — Agent Card 확인
+
+A2A 서버가 정상 기동했는지 확인합니다.
+
+```bash
+curl http://localhost:8001/.well-known/agent-card.json
+```
+
+정상이면 `MarketPriceAgent`의 이름·설명·capabilities가 담긴 JSON을 반환합니다.
+
+#### 5단계 — 메인 앱 실행 (별도 터미널)
+
+```bash
+uv run uvicorn app.web:app --reload --port 8000
+```
+
+브라우저에서 `http://localhost:8000` 을 열면 Web UI가 나타납니다.
+
+---
+
+### Filesystem MCP 서버 동작 방식
+
+| 항목 | 내용 |
+|------|------|
+| 실행 방식 | `npx -y @modelcontextprotocol/server-filesystem <절대경로>` (stdio) |
+| Allowed directory | `data/market_catalog/` 디렉터리만 접근 허용 |
+| 허용 도구 | `list_directory`, `read_file`, `read_multiple_files`, `search_files`, `list_allowed_directories` |
+| 금지 도구 | `write_file`, `edit_file`, `create_directory`, `move_file`, `delete_file` (tool_filter로 차단) |
+| 웹 검색 | 사용 안 함 — 모든 가격 정보는 로컬 JSON 파일 기반 |
+
+MarketPriceAgent는 프로세스 시작 시 `npx`로 MCP 서버를 자동 실행하므로 별도 설치 없이 동작합니다.
+
+---
+
+### 가격 데이터 주의사항
+
+- 모든 가격 정보는 **로컬 catalog 기준 가격 후보**입니다.
+- 실제 마트의 가격·재고·배송비와 다를 수 있습니다.
+- **실시간 웹 가격 비교가 아닙니다.** Tavily, web scraping, 외부 API를 사용하지 않습니다.
+- 응답에는 `source_file`, `updated_at`, `confidence`, `note` 필드가 포함되어 출처와 신뢰도를 명시합니다.
+- catalog 가격을 갱신하려면 해당 JSON 파일의 `price`와 `updated_at`을 직접 수정하세요.
+
+---
+
+### 사용 예시
+
+#### 예시 입력
+
+```text
+냉장고에 계란 2개, 간장 있는데 소고기 넣은 요리 해먹고 싶어
+```
+
+이 경우 소고기가 부족 재료로 산출되어 `SHOPPING_NEEDED` 분기로 진입합니다.
+
+#### ShoppingAgent 예시 응답
+
+```
+### 1. 추천 레시피
+**소고기 계란 간장 볶음**
+- 소고기를 얇게 썰어 간장 양념 후 팬에 볶습니다.
+- 계란을 스크램블로 익혀 함께 볶습니다.
+- 예상 조리 시간: 15분
+
+### 2. 보유 재료 활용
+- 계란 (냉장고 보유)
+- 간장 (냉장고 보유)
+
+### 3. 추가 구매 재료
+- 소고기 (국거리용 또는 불고기용) 200g
+
+### 4. 로컬 catalog 기반 구매 후보
+| 재료 | 마트 | 상품명 | 가격 | 재고 |
+|------|------|--------|------|------|
+| 소고기 | Emart | 호주산 소고기 국거리용 200g | 6,980원 | 있음 |
+| 소고기 | LotteMart | 호주산 소고기 불고기용 200g | 7,200원 | 없음 |
+
+### 5. 추천 구매처와 이유
+**Emart** — 소고기 재고 있음, 가격 최저 (6,980원)
+
+### 6. 가격/재고 변동 주의사항
+위 가격 정보는 로컬 catalog 기준 가격 후보이며, 실제 가격·재고·배송비와 다를 수 있습니다.
+```
+
+---
+
+### 테스트 및 검증
+
+#### 스키마·catalog 유효성 검사
+
+```bash
+uv run pytest tests/test_market_catalog.py -v
+```
+
+테스트 항목:
+
+- `test_catalog_top_level_fields` — homeplus/emart/lotte_mart 필수 필드 검증
+- `test_catalog_items_have_required_fields` — 각 항목의 필수 필드 검증
+- `test_catalog_prices_are_positive_or_null` — 가격 양수 검증
+- `test_ingredient_aliases_schema` — alias 사전 구조 검증
+- `test_price_offer_creation` — PriceOffer Pydantic 모델 생성
+- `test_market_price_agent_import` — MarketPriceAgent 정상 임포트
+- `test_market_a2a_app_import` — A2A 서버 앱 정상 임포트
+- `test_remote_agents_import` — RemoteA2aAgent 정상 임포트
+- `test_shopping_agent_has_market_sub_agent` — ShoppingAgent에 sub_agent 연결 확인
+
+#### 전체 테스트 실행
+
+```bash
+uv run pytest tests/ -v
+# 25 passed
+```
+
+#### 개별 파일 컴파일 확인
+
+```bash
+uv run python -m py_compile app/agents/market_price_agent.py && echo "OK"
+uv run python -m py_compile app/agents/market_a2a_app.py && echo "OK"
+uv run python -m py_compile app/agents/remote_agents.py && echo "OK"
+uv run python -m py_compile app/agents/branch_agents.py && echo "OK"
+```
