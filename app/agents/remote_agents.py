@@ -12,7 +12,7 @@ except ImportError:
     try:
         from google.adk.agents.remote_a2a_agent import AGENT_CARD_WELL_KNOWN_PATH
     except ImportError:
-        AGENT_CARD_WELL_KNOWN_PATH = "/.well-known/agent.json"
+        AGENT_CARD_WELL_KNOWN_PATH = "/.well-known/agent-card.json"
 
 MARKET_A2A_URL = os.getenv("MARKET_A2A_URL", "http://localhost:8001")
 
