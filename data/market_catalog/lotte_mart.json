@@ -116,11 +116,55 @@
     {
       "canonical_ingredient": "연어",
       "aliases": ["연어", "salmon"],
-      "product_name": "국내산 연어 300g",
-      "unit": "300g",
-      "quantity_value": 300,
+      "product_name": "국내산 연어 500g",
+      "unit": "500g",
+      "quantity_value": 500,
       "quantity_unit": "g",
-      "price": 3400,
+      "price": 34000,
+      "in_stock": true,
+      "note": "샘플 catalog 데이터"
+    },
+    {
+      "canonical_ingredient": "레몬",
+      "aliases": ["레몬", "lemon"],
+      "product_name": "국내산 레몬 1개",
+      "unit": "1개",
+      "quantity_value": 1,
+      "quantity_unit": "개",
+      "price": 1500,
+      "in_stock": true,
+      "note": "샘플 catalog 데이터"
+    },
+    {
+      "canonical_ingredient": "올리브 오일",
+      "aliases": ["올리브 오일", "olive oil"],
+      "product_name": "국내산 올리브 오일 250ml",
+      "unit": "250ml",
+      "quantity_value": 250,
+      "quantity_unit": "ml",
+      "price": 30000,
+      "in_stock": true,
+      "note": "샘플 catalog 데이터"
+    },
+    {
+      "canonical_ingredient": "후추",
+      "aliases": ["후추", "pepper"],
+      "product_name": "국내산 후추 100g",
+      "unit": "100g",
+      "quantity_value": 100,
+      "quantity_unit": "g",
+      "price": 800,
+      "in_stock": true,
+      "note": "샘플 catalog 데이터"
+    },
+    {
+      "canonical_ingredient": "소금",
+      "aliases": ["소금", "salt"],
+      "product_name": "국내산 소금 100g",
+      "unit": "100g",
+      "quantity_value": 100,
+      "quantity_unit": "g",
+      "price": 600,
       "in_stock": true,
       "note": "샘플 catalog 데이터"
     }

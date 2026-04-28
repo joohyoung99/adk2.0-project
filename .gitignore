@@ -17,3 +17,6 @@ wheels/
 
 docs/
 CLAUDE.md
+
+# Geni Insights DLL이 cmd.exe 서브프로세스 CWD에 생성하는 로그
+%programdata%/
